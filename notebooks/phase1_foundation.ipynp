@@ -1,0 +1,315 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Phase 1: Foundation - Data Loading\\n",
+    "\\n",
+    "This notebook demonstrates the migrated Phase 1 functionality.\\n",
+    "It loads the PTB-XL dataset and prepares it for processing."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Setup - Add project root to path\\n",
+    "import sys\\n",
+    "from pathlib import Path\\n",
+    "\\n",
+    "# Go up one directory from notebooks to project root\\n",
+    "project_root = Path().absolute().parent\\n",
+    "sys.path.append(str(project_root))\\n",
+    "\\n",
+    "print(f\"Project root: {project_root}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Import our custom modules\\n",
+    "from app.utils.dataset_manager import DatasetManager\\n",
+    "from config.settings import TARGET_CONDITIONS, DATASET_CONFIG\\n",
+    "\\n",
+    "# Standard imports\\n",
+    "import numpy as np\\n",
+    "import pandas as pd\\n",
+    "import matplotlib.pyplot as plt\\n",
+    "import seaborn as sns\\n",
+    "\\n",
+    "# Set plotting style\\n",
+    "sns.set_style(\"whitegrid\")\\n",
+    "plt.rcParams['figure.figsize'] = (12, 6)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Load PTB-XL Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize dataset manager\\n",
+    "manager = DatasetManager()\\n",
+    "\\n",
+    "# Load a small subset first to test\\n",
+    "print(\"Loading small subset for testing...\")\\n",
+    "test_results = manager.load_ptbxl_complete(\\n",
+    "    max_records=100,\\n",
+    "    sampling_rate=100,\\n",
+    "    use_cache=True\\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Examine the loaded data\\n",
+    "X = test_results['X']\\n",
+    "labels = test_results['labels']\\n",
+    "ids = test_results['ids']\\n",
+    "\\n",
+    "print(f\"Loaded {len(X)} ECG records\")\\n",
+    "print(f\"Signal shape: {X.shape}\")\\n",
+    "print(f\"Data type: {X.dtype}\")\\n",
+    "print(f\"\\nFirst 5 labels: {labels[:5]}\")\\n",
+    "print(f\"First 5 IDs: {ids[:5]}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Visualize Sample ECG"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Plot a sample ECG\\n",
+    "sample_idx = 0\\n",
+    "sample_ecg = X[sample_idx]\\n",
+    "sample_label = labels[sample_idx]\\n",
+    "\\n",
+    "# Create time axis (100 Hz sampling rate, 10 seconds)\\n",
+    "time = np.arange(sample_ecg.shape[0]) / 100\\n",
+    "\\n",
+    "# Plot all 12 leads\\n",
+    "fig, axes = plt.subplots(12, 1, figsize=(15, 20), sharex=True)\\n",
+    "lead_names = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']\\n",
+    "\\n",
+    "for i, (ax, lead) in enumerate(zip(axes, lead_names)):\\n",
+    "    ax.plot(time, sample_ecg[:, i], 'b-', linewidth=0.5)\\n",
+    "    ax.set_ylabel(lead)\\n",
+    "    ax.grid(True, alpha=0.3)\\n",
+    "    ax.set_ylim(-2, 2)\\n",
+    "\\n",
+    "axes[-1].set_xlabel('Time (seconds)')\\n",
+    "fig.suptitle(f'12-Lead ECG - Record {ids[sample_idx]} - Conditions: {sample_label}', fontsize=16)\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Analyze Class Distribution"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Count conditions in our subset\\n",
+    "from collections import Counter\\n",
+    "\\n",
+    "all_conditions = []\\n",
+    "for label_list in labels:\\n",
+    "    all_conditions.extend(label_list)\\n",
+    "\\n",
+    "condition_counts = Counter(all_conditions)\\n",
+    "\\n",
+    "# Create bar plot\\n",
+    "conditions = list(condition_counts.keys())\\n",
+    "counts = list(condition_counts.values())\\n",
+    "\\n",
+    "plt.figure(figsize=(10, 6))\\n",
+    "bars = plt.bar(conditions, counts)\\n",
+    "\\n",
+    "# Color target conditions differently\\n",
+    "for i, (condition, bar) in enumerate(zip(conditions, bars)):\\n",
+    "    if condition in TARGET_CONDITIONS:\\n",
+    "        bar.set_color('darkblue')\\n",
+    "    else:\\n",
+    "        bar.set_color('lightgray')\\n",
+    "\\n",
+    "plt.xlabel('Condition')\\n",
+    "plt.ylabel('Count')\\n",
+    "plt.title(f'Condition Distribution in Subset (n={len(X)})')\\n",
+    "plt.xticks(rotation=45)\\n",
+    "\\n",
+    "# Add value labels on bars\\n",
+    "for bar, count in zip(bars, counts):\\n",
+    "    height = bar.get_height()\\n",
+    "    plt.text(bar.get_x() + bar.get_width()/2., height,\\n",
+    "             f'{count}', ha='center', va='bottom')\\n",
+    "\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()\\n",
+    "\\n",
+    "print(f\"\\nTarget conditions: {TARGET_CONDITIONS}\")\\n",
+    "print(f\"Total unique conditions in subset: {len(conditions)}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Load Full Dataset (Optional)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Uncomment to load the full dataset\\n",
+    "# WARNING: This will take several minutes and use ~2-3 GB of memory\\n",
+    "\\n",
+    "# full_results = manager.load_ptbxl_complete(\\n",
+    "#     max_records=None,  # Load all records\\n",
+    "#     sampling_rate=100,\\n",
+    "#     use_cache=True\\n",
+    "# )\\n",
+    "\\n",
+    "# print(f\"Full dataset shape: {full_results['X'].shape}\")\\n",
+    "# print(f\"Memory usage: {full_results['stats']['memory_gb']:.2f} GB\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Create Train/Test Split"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Split the data\\n",
+    "train_data, test_data = manager.get_train_test_split(\\n",
+    "    test_results,\\n",
+    "    test_size=0.2,\\n",
+    "    stratify=True\\n",
+    ")\\n",
+    "\\n",
+    "print(f\"Train set size: {len(train_data['X'])}\"\\n",
+    "print(f\"Test set size: {len(test_data['X'])}\"\\n",
+    "\\n",
+    "# Verify stratification\\n",
+    "train_conditions = Counter()\\n",
+    "test_conditions = Counter()\\n",
+    "\\n",
+    "for labels in train_data['labels']:\\n",
+    "    if labels:\\n",
+    "        train_conditions[labels[0]] += 1\\n",
+    "\\n",
+    "for labels in test_data['labels']:\\n",
+    "    if labels:\\n",
+    "        test_conditions[labels[0]] += 1\\n",
+    "\\n",
+    "print(\"\\nTrain set distribution:\")\\n",
+    "for cond, count in train_conditions.most_common():\\n",
+    "    print(f\"  {cond}: {count}\"\\n",
+    "\\n",
+    "print(\"\\nTest set distribution:\")\\n",
+    "for cond, count in test_conditions.most_common():\\n",
+    "    print(f\"  {cond}: {count}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 6. Save Results for Next Phase"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Save the processed data for Phase 2\\n",
+    "import pickle\\n",
+    "\\n",
+    "output_dir = project_root / 'data' / 'processed'\\n",
+    "output_dir.mkdir(parents=True, exist_ok=True)\\n",
+    "\\n",
+    "# Save as pickle\\n",
+    "phase1_output = {\\n",
+    "    'X': test_results['X'],\\n",
+    "    'labels': test_results['labels'],\\n",
+    "    'ids': test_results['ids'],\\n",
+    "    'metadata': test_results['metadata'],\\n",
+    "    'target_conditions': test_results['target_conditions'],\\n",
+    "    'train_data': train_data,\\n",
+    "    'test_data': test_data\\n",
+    "}\\n",
+    "\\n",
+    "output_file = output_dir / 'phase1_output.pkl'\\n",
+    "with open(output_file, 'wb') as f:\\n",
+    "    pickle.dump(phase1_output, f)\\n",
+    "\\n",
+    "print(f\"✅ Phase 1 results saved to: {output_file}\")\\n",
+    "print(f\"\\nReady for Phase 2: Preprocessing!\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
