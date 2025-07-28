@@ -1,0 +1,426 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Phase 2: Signal Preprocessing\\n",
+    "\\n",
+    "This notebook demonstrates the preprocessing pipeline for ECG signals."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Setup\\n",
+    "import sys\\n",
+    "from pathlib import Path\\n",
+    "\\n",
+    "# Add project root to path\\n",
+    "project_root = Path().absolute().parent\\n",
+    "sys.path.append(str(project_root))\\n",
+    "\\n",
+    "# Imports\\n",
+    "import numpy as np\\n",
+    "import pandas as pd\\n",
+    "import matplotlib.pyplot as plt\\n",
+    "import seaborn as sns\\n",
+    "from IPython.display import display\\n",
+    "\\n",
+    "# Project imports\\n",
+    "from models.preprocessing import PreprocessingPipeline\\n",
+    "from config.preprocessing_config import PreprocessingConfig, PREPROCESSING_PRESETS\\n",
+    "from config.settings import DATA_DIR\\n",
+    "\\n",
+    "# Set plotting style\\n",
+    "sns.set_style('whitegrid')\\n",
+    "plt.rcParams['figure.figsize'] = (12, 6)\\n",
+    "\\n",
+    "print(f'Project root: {project_root}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Load Data from Phase 1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load Phase 1 results\\n",
+    "import pickle\\n",
+    "\\n",
+    "phase1_file = DATA_DIR / 'processed' / 'phase1_output.pkl'\\n",
+    "\\n",
+    "if phase1_file.exists():\\n",
+    "    print(f'Loading from: {phase1_file}')\\n",
+    "    with open(phase1_file, 'rb') as f:\\n",
+    "        phase1_data = pickle.load(f)\\n",
+    "    \\n",
+    "    X = phase1_data['X']\\n",
+    "    labels = phase1_data['labels']\\n",
+    "    ids = phase1_data['ids']\\n",
+    "else:\\n",
+    "    # Load fresh data\\n",
+    "    from app.utils.dataset_manager import DatasetManager\\n",
+    "    \\n",
+    "    manager = DatasetManager()\\n",
+    "    results = manager.load_ptbxl_complete(max_records=100)\\n",
+    "    \\n",
+    "    X = results['X']\\n",
+    "    labels = results['labels']\\n",
+    "    ids = results['ids']\\n",
+    "\\n",
+    "print(f'Loaded {len(X)} ECG records')\\n",
+    "print(f'Signal shape: {X.shape}')\\n",
+    "print(f'First 5 labels: {labels[:5]}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Explore Preprocessing Configurations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# View available presets\\n",
+    "print('Available preprocessing presets:')\\n",
+    "for name, config in PREPROCESSING_PRESETS.items():\\n",
+    "    print(f'\\\\n{name.upper()}:')\\n",
+    "    print(f'  - Normalization: {config.normalization_method}')\\n",
+    "    print(f'  - Target length: {config.target_length}')\\n",
+    "    print(f'  - Filter range: {config.highpass_freq}-{config.lowpass_freq} Hz')\\n",
+    "    print(f'  - Max bad leads: {config.max_missing_leads}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create custom configuration\\n",
+    "custom_config = PreprocessingConfig(\\n",
+    "    sampling_rate=100,\\n",
+    "    target_length=1000,\\n",
+    "    highpass_freq=0.5,\\n",
+    "    lowpass_freq=40,\\n",
+    "    normalization_method='z-score',\\n",
+    "    clip_percentile=99.5\\n",
+    ")\\n",
+    "\\n",
+    "print('Custom configuration created')\\n",
+    "print(f'Sampling rate: {custom_config.sampling_rate} Hz')\\n",
+    "print(f'Normalization: {custom_config.normalization_method}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Signal Quality Assessment"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from models.preprocessing import SignalQualityAssessor\\n",
+    "\\n",
+    "# Create quality assessor\\n",
+    "assessor = SignalQualityAssessor(custom_config)\\n",
+    "\\n",
+    "# Assess a single signal\\n",
+    "sample_quality = assessor.assess_signal(X[0])\\n",
+    "\\n",
+    "print('Sample Signal Quality Report:')\\n",
+    "print(f'  - Valid: {sample_quality[\"is_valid\"]}')\\n",
+    "print(f'  - Length: {sample_quality[\"length\"]} samples')\\n",
+    "print(f'  - Leads: {sample_quality[\"leads\"]}')\\n",
+    "print(f'  - SNR estimate: {sample_quality[\"snr_estimate\"]:.2f}')\\n",
+    "print(f'  - Issues: {sample_quality[\"issues\"]}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Filter all signals by quality\\n",
+    "X_valid, labels_valid, ids_valid, quality_reports = assessor.filter_valid_signals(\\n",
+    "    X[:50], labels[:50], ids[:50]  # Test with first 50\\n",
+    ")\\n",
+    "\\n",
+    "# Get quality statistics\\n",
+    "quality_stats = assessor.get_quality_statistics(quality_reports)\\n",
+    "\\n",
+    "print(f'Quality Assessment Results:')\\n",
+    "print(f'  - Valid signals: {quality_stats[\"valid_records\"]}/{quality_stats[\"total_records\"]}')\\n",
+    "print(f'  - Validity rate: {quality_stats[\"validity_rate\"]*100:.1f}%')\\n",
+    "print(f'  - Mean SNR: {quality_stats[\"mean_snr\"]:.2f}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Signal Filtering and Artifact Detection"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from models.preprocessing import ECGFilterBank, ArtifactDetector\\n",
+    "\\n",
+    "# Create filter bank\\n",
+    "filter_bank = ECGFilterBank(custom_config)\\n",
+    "\\n",
+    "# View filter responses\\n",
+    "responses = filter_bank.get_filter_response()\\n",
+    "\\n",
+    "# Plot filter responses\\n",
+    "fig, axes = plt.subplots(1, len(responses), figsize=(15, 4))\\n",
+    "\\n",
+    "for idx, (filter_name, response) in enumerate(responses.items()):\\n",
+    "    ax = axes[idx] if len(responses) > 1 else axes\\n",
+    "    ax.plot(response['frequencies'], response['magnitude_db'])\\n",
+    "    ax.set_title(f'{filter_name.capitalize()} Filter Response')\\n",
+    "    ax.set_xlabel('Frequency (Hz)')\\n",
+    "    ax.set_ylabel('Magnitude (dB)')\\n",
+    "    ax.grid(True, alpha=0.3)\\n",
+    "    ax.set_xlim(0, custom_config.sampling_rate / 2)\\n",
+    "\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Apply filters to a sample signal\\n",
+    "sample_signal = X[0]\\n",
+    "filtered_signal = filter_bank.apply_filters(sample_signal)\\n",
+    "\\n",
+    "# Detect artifacts\\n",
+    "artifact_detector = ArtifactDetector(custom_config)\\n",
+    "artifacts = artifact_detector.detect_artifacts(filtered_signal)\\n",
+    "\\n",
+    "# Plot comparison\\n",
+    "fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)\\n",
+    "\\n",
+    "# Original signal (first lead)\\n",
+    "axes[0].plot(sample_signal[:, 0], 'b-', alpha=0.7, label='Original')\\n",
+    "axes[0].set_ylabel('Amplitude (mV)')\\n",
+    "axes[0].set_title('Original ECG Signal - Lead 1')\\n",
+    "axes[0].grid(True, alpha=0.3)\\n",
+    "axes[0].legend()\\n",
+    "\\n",
+    "# Filtered signal\\n",
+    "axes[1].plot(filtered_signal[:, 0], 'r-', alpha=0.7, label='Filtered')\\n",
+    "axes[1].set_xlabel('Time (samples)')\\n",
+    "axes[1].set_ylabel('Amplitude (mV)')\\n",
+    "axes[1].set_title('Filtered ECG Signal - Lead 1')\\n",
+    "axes[1].grid(True, alpha=0.3)\\n",
+    "axes[1].legend()\\n",
+    "\\n",
+    "# Mark artifacts\\n",
+    "for artifact_type, artifact_list in artifacts.items():\\n",
+    "    for artifact_info in artifact_list:\\n",
+    "        if artifact_info['lead'] == 0:  # Only show lead 0\\n",
+    "            indices = artifact_info['indices']\\n",
+    "            if len(indices) > 0:\\n",
+    "                axes[1].scatter(indices, filtered_signal[indices, 0], \\n",
+    "                              c='red', s=10, alpha=0.5, \\n",
+    "                              label=f'{artifact_type} artifacts')\\n",
+    "\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()\\n",
+    "\\n",
+    "# Print artifact summary\\n",
+    "print('Detected artifacts:')\\n",
+    "for artifact_type, artifact_list in artifacts.items():\\n",
+    "    total_artifacts = sum(len(a['indices']) for a in artifact_list)\\n",
+    "    print(f'  - {artifact_type}: {total_artifacts} samples')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Run Complete Preprocessing Pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize preprocessing pipeline\\n",
+    "pipeline = PreprocessingPipeline(custom_config)\\n",
+    "\\n",
+    "# Run preprocessing on subset\\n",
+    "results = pipeline.run(\\n",
+    "    X=X[:100],  # Use first 100 samples\\n",
+    "    labels=labels[:100],\\n",
+    "    ids=ids[:100],\\n",
+    "    use_cache=False,\\n",
+    "    visualize=True\\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Explore results\\n",
+    "X_preprocessed = results['X_preprocessed']\\n",
+    "y_encoded = results['y_encoded']\\n",
+    "label_info = results['label_info']\\n",
+    "\\n",
+    "print('Preprocessing Results:')\\n",
+    "print(f'  - Input shape: {X[:100].shape}')\\n",
+    "print(f'  - Output shape: {X_preprocessed.shape}')\\n",
+    "print(f'  - Valid samples: {len(X_preprocessed)}')\\n",
+    "print(f'  - Classes: {label_info[\"encoder\"].classes_}')\\n",
+    "print(f'\\\\nClass weights:')\\n",
+    "for class_idx, weight in label_info['class_weights'].items():\\n",
+    "    class_name = label_info['encoder'].classes_[class_idx]\\n",
+    "    print(f'  - {class_name}: {weight:.3f}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 6. Visualize Preprocessing Effects"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Compare signal distributions\\n",
+    "fig, axes = plt.subplots(1, 2, figsize=(12, 5))\\n",
+    "\\n",
+    "# Original signal distribution\\n",
+    "axes[0].hist(X[:100].flatten(), bins=50, alpha=0.7, density=True)\\n",
+    "axes[0].set_title('Original Signal Distribution')\\n",
+    "axes[0].set_xlabel('Amplitude (mV)')\\n",
+    "axes[0].set_ylabel('Density')\\n",
+    "axes[0].grid(True, alpha=0.3)\\n",
+    "\\n",
+    "# Preprocessed signal distribution\\n",
+    "axes[1].hist(X_preprocessed.flatten(), bins=50, alpha=0.7, density=True)\\n",
+    "axes[1].set_title('Preprocessed Signal Distribution')\\n",
+    "axes[1].set_xlabel('Normalized Amplitude')\\n",
+    "axes[1].set_ylabel('Density')\\n",
+    "axes[1].grid(True, alpha=0.3)\\n",
+    "\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Visualize processing statistics\\n",
+    "stats = results['statistics']\\n",
+    "\\n",
+    "# Create summary dataframe\\n",
+    "summary_data = {\\n",
+    "    'Metric': ['Original Samples', 'Final Samples', 'Removed', 'Validity Rate', \\n",
+    "               'Memory (GB)', 'Amplitude Artifacts', 'Gradient Artifacts'],\\n",
+    "    'Value': [\\n",
+    "        stats['original_samples'],\\n",
+    "        stats['final_samples'],\\n",
+    "        stats['original_samples'] - stats['final_samples'],\\n",
+    "        f\"{stats['quality_stats']['validity_rate']*100:.1f}%\",\\n",
+    "        f\"{stats['memory_usage']['final_gb']:.3f}\",\\n",
+    "        stats['processing_stats']['artifact_counts']['amplitude'],\\n",
+    "        stats['processing_stats']['artifact_counts']['gradient']\\n",
+    "    ]\\n",
+    "}\\n",
+    "\\n",
+    "summary_df = pd.DataFrame(summary_data)\\n",
+    "display(summary_df)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 7. Save Results for Phase 3"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# The preprocessing pipeline automatically saves results\\n",
+    "# Let's verify the saved files\\n",
+    "\\n",
+    "saved_files = list((DATA_DIR / 'processed').glob('*'))\\n",
+    "print('Saved files:')\\n",
+    "for file in saved_files:\\n",
+    "    print(f'  - {file.name}')\\n",
+    "\\n",
+    "print(f'\\\\n✅ Preprocessing complete!')\\n",
+    "print(f'Results saved to: {DATA_DIR / \"processed\"}')"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

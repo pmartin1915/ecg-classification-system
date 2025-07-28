@@ -1,0 +1,393 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Phase 3: Feature Extraction\\n",
+    "\\n",
+    "This notebook demonstrates the feature extraction pipeline for ECG signals."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Setup\\n",
+    "import sys\\n",
+    "from pathlib import Path\\n",
+    "\\n",
+    "# Add project root to path\\n",
+    "project_root = Path().absolute().parent\\n",
+    "sys.path.append(str(project_root))\\n",
+    "\\n",
+    "# Imports\\n",
+    "import numpy as np\\n",
+    "import pandas as pd\\n",
+    "import matplotlib.pyplot as plt\\n",
+    "import seaborn as sns\\n",
+    "from IPython.display import display\\n",
+    "import pickle\\n",
+    "\\n",
+    "# Project imports\\n",
+    "from models.feature_extraction import FeatureExtractionPipeline\\n",
+    "from config.feature_config import FeatureExtractionConfig, FEATURE_EXTRACTION_PRESETS\\n",
+    "from config.settings import DATA_DIR\\n",
+    "\\n",
+    "# Set plotting style\\n",
+    "sns.set_style('whitegrid')\\n",
+    "plt.rcParams['figure.figsize'] = (12, 6)\\n",
+    "\\n",
+    "print(f'Project root: {project_root}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Load Preprocessed Data from Phase 2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load Phase 2 results\\n",
+    "phase2_file = DATA_DIR / 'processed' / 'preprocessing_results.pkl'\\n",
+    "\\n",
+    "if phase2_file.exists():\\n",
+    "    print(f'Loading from: {phase2_file}')\\n",
+    "    with open(phase2_file, 'rb') as f:\\n",
+    "        phase2_data = pickle.load(f)\\n",
+    "    \\n",
+    "    X_preprocessed = phase2_data['X_preprocessed']\\n",
+    "    y_encoded = phase2_data['y_encoded']\\n",
+    "    label_encoder = phase2_data['label_info']['encoder']\\n",
+    "    \\n",
+    "    print(f'\\\\nLoaded data:')\\n",
+    "    print(f'  - Signals shape: {X_preprocessed.shape}')\\n",
+    "    print(f'  - Labels shape: {y_encoded.shape}')\\n",
+    "    print(f'  - Classes: {label_encoder.classes_}')\\n",
+    "else:\\n",
+    "    print('❌ Phase 2 results not found. Please run Phase 2 first.')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Explore Feature Extraction Configuration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# View available presets\\n",
+    "print('Available feature extraction presets:\\\\n')\\n",
+    "\\n",
+    "for name, config in FEATURE_EXTRACTION_PRESETS.items():\\n",
+    "    print(f'{name.upper()}:')\\n",
+    "    print(f'  - Feature selection: top {config.feature_selection_k} features')\\n",
+    "    print(f'  - Correlation threshold: {config.correlation_threshold}')\\n",
+    "    print(f'  - Wavelet scales: {len(config.wavelet_scales)}')\\n",
+    "    print(f'  - DWT level: {config.dwt_level}')\\n",
+    "    print()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create and examine custom configuration\\n",
+    "custom_config = FeatureExtractionConfig(\\n",
+    "    sampling_rate=100,\\n",
+    "    feature_selection_k=75,\\n",
+    "    correlation_threshold=0.95,\\n",
+    "    r_peak_height=0.3,\\n",
+    "    r_peak_distance=60\\n",
+    ")\\n",
+    "\\n",
+    "print('Custom configuration created:')\\n",
+    "print(f'  - Sampling rate: {custom_config.sampling_rate} Hz')\\n",
+    "print(f'  - Lead names: {custom_config.lead_names}')\\n",
+    "print(f'  - Frequency bands: {list(custom_config.freq_bands.keys())}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Test Individual Feature Extractors"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Test temporal feature extraction\\n",
+    "from models.feature_extraction import TemporalFeatureExtractor\\n",
+    "\\n",
+    "temporal_extractor = TemporalFeatureExtractor(custom_config)\\n",
+    "\\n",
+    "# Extract features from first signal\\n",
+    "sample_signal = X_preprocessed[0]\\n",
+    "temporal_features = temporal_extractor.extract_statistical_features(sample_signal)\\n",
+    "morphological_features, r_peaks = temporal_extractor.extract_morphological_features(sample_signal)\\n",
+    "\\n",
+    "print(f'Temporal features extracted: {len(temporal_features)}')\\n",
+    "print(f'Morphological features extracted: {len(morphological_features)}')\\n",
+    "print(f'R-peaks detected: {len(r_peaks)}')\\n",
+    "\\n",
+    "# Display some example features\\n",
+    "print('\\\\nExample temporal features:')\\n",
+    "for i, (key, value) in enumerate(list(temporal_features.items())[:5]):\\n",
+    "    print(f'  {key}: {value:.4f}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Visualize R-peak detection\\n",
+    "lead_ii = sample_signal[:, 1]  # Lead II\\n",
+    "time = np.arange(len(lead_ii)) / custom_config.sampling_rate\\n",
+    "\\n",
+    "plt.figure(figsize=(15, 5))\\n",
+    "plt.plot(time, lead_ii, 'b-', label='ECG Signal')\\n",
+    "\\n",
+    "if len(r_peaks) > 0:\\n",
+    "    plt.plot(time[r_peaks], lead_ii[r_peaks], 'ro', markersize=8, label='R-peaks')\\n",
+    "    \\n",
+    "    # Show RR intervals\\n",
+    "    for i in range(1, min(5, len(r_peaks))):\\n",
+    "        rr_interval = (r_peaks[i] - r_peaks[i-1]) / custom_config.sampling_rate\\n",
+    "        mid_point = (r_peaks[i] + r_peaks[i-1]) // 2\\n",
+    "        plt.text(time[mid_point], lead_ii[mid_point] + 0.1, \\n",
+    "                f'{rr_interval:.2f}s', ha='center', fontsize=8)\\n",
+    "\\n",
+    "plt.xlabel('Time (seconds)')\\n",
+    "plt.ylabel('Amplitude')\\n",
+    "plt.title('R-peak Detection in Lead II')\\n",
+    "plt.legend()\\n",
+    "plt.grid(True, alpha=0.3)\\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Test frequency feature extraction\\n",
+    "from models.feature_extraction import FrequencyFeatureExtractor\\n",
+    "\\n",
+    "freq_extractor = FrequencyFeatureExtractor(custom_config)\\n",
+    "freq_features = freq_extractor.extract_spectral_features(sample_signal)\\n",
+    "\\n",
+    "print(f'Frequency features extracted: {len(freq_features)}')\\n",
+    "\\n",
+    "# Display power in different bands for Lead II\\n",
+    "print('\\\\nPower in frequency bands (Lead II):')\\n",
+    "for band in custom_config.freq_bands:\\n",
+    "    power_key = f'II_{band}_power'\\n",
+    "    rel_power_key = f'II_{band}_rel_power'\\n",
+    "    if power_key in freq_features:\\n",
+    "        print(f'  {band}: {freq_features[power_key]:.4f} (relative: {freq_features[rel_power_key]:.4f})')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Run Complete Feature Extraction Pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Initialize pipeline with custom configuration\\n",
+    "pipeline = FeatureExtractionPipeline(custom_config)\\n",
+    "\\n",
+    "# Run on subset for demonstration\\n",
+    "n_samples = min(100, len(X_preprocessed))\\n",
+    "\\n",
+    "print(f'Running feature extraction on {n_samples} samples...')\\n",
+    "\\n",
+    "results = pipeline.run(\\n",
+    "    X_preprocessed=X_preprocessed[:n_samples],\\n",
+    "    y_encoded=y_encoded[:n_samples],\\n",
+    "    label_encoder=label_encoder,\\n",
+    "    use_cache=False,\\n",
+    "    visualize=False  # We'll create custom visualizations\\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Examine results\\n",
+    "print('Feature Extraction Results:')\\n",
+    "print(f'  - Total features extracted: {results[\"statistics\"][\"total_features\"]}')\\n",
+    "print(f'  - Selected features: {results[\"statistics\"][\"selected_features\"]}')\\n",
+    "print(f'  - Reduction: {results[\"statistics\"][\"reduction_percentage\"]:.1f}%')\\n",
+    "print(f'  - Processing time: {results[\"statistics\"][\"processing_time\"]:.2f} seconds')\\n",
+    "\\n",
+    "print('\\\\nFeature categories:')\\n",
+    "for category, count in results['statistics']['feature_categories'].items():\\n",
+    "    print(f'  - {category}: {count}')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Feature Importance Analysis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Display top features\\n",
+    "feature_importance = results['feature_importance']\\n",
+    "\\n",
+    "print('Top 15 Most Important Features:')\\n",
+    "print('-' * 60)\\n",
+    "\\n",
+    "for idx, row in feature_importance.head(15).iterrows():\\n",
+    "    print(f'{idx+1:2d}. {row[\"feature\"]:<40} Score: {row[\"combined_score\"]:.4f}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Visualize feature importance\\n",
+    "fig, axes = plt.subplots(1, 2, figsize=(15, 6))\\n",
+    "\\n",
+    "# Top 20 features bar plot\\n",
+    "ax = axes[0]\\n",
+    "top_20 = feature_importance.head(20)\\n",
+    "ax.barh(range(len(top_20)), top_20['combined_score'])\\n",
+    "ax.set_yticks(range(len(top_20)))\\n",
+    "ax.set_yticklabels(top_20['feature'], fontsize=8)\\n",
+    "ax.set_xlabel('Combined Importance Score')\\n",
+    "ax.set_title('Top 20 Most Important Features')\\n",
+    "ax.invert_yaxis()\\n",
+    "\\n",
+    "# Score distribution\\n",
+    "ax = axes[1]\\n",
+    "ax.hist(feature_importance['combined_score'], bins=30, edgecolor='black', alpha=0.7)\\n",
+    "ax.axvline(feature_importance['combined_score'].mean(), \\n",
+    "          color='red', linestyle='--', \\n",
+    "          label=f'Mean: {feature_importance[\"combined_score\"].mean():.3f}')\\n",
+    "ax.set_xlabel('Combined Importance Score')\\n",
+    "ax.set_ylabel('Number of Features')\\n",
+    "ax.set_title('Feature Importance Score Distribution')\\n",
+    "ax.legend()\\n",
+    "\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 6. Feature Correlation Analysis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create feature DataFrame\\n",
+    "feature_df = pd.DataFrame(results['X_features'], columns=results['feature_names'])\\n",
+    "\\n",
+    "# Calculate correlation matrix for top features\\n",
+    "top_features = feature_importance.head(15)['feature'].tolist()\\n",
+    "corr_matrix = feature_df[top_features].corr()\\n",
+    "\\n",
+    "# Plot correlation heatmap\\n",
+    "plt.figure(figsize=(10, 8))\\n",
+    "mask = np.triu(np.ones_like(corr_matrix, dtype=bool))\\n",
+    "sns.heatmap(corr_matrix, mask=mask, annot=True, fmt='.2f', \\n",
+    "            cmap='coolwarm', center=0, square=True, \\n",
+    "            linewidths=0.5, cbar_kws={\"shrink\": 0.8})\\n",
+    "plt.title('Feature Correlation Matrix (Top 15 Features)')\\n",
+    "plt.tight_layout()\\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 7. PCA Analysis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Get PCA results\\n",
+    "X_pca = results['X_pca']\\n",
+    "pca = results['pca_transformer']\\n",
+    "\\n",
+    "# Plot explained variance\\n",
+    "fig, axes = plt.subplots(1, 2, figsize=(12, 5))\\n",
+    "\\n",
+    "# Individual explained variance\\n",
+    "ax = axes[0]\\n",
+    "ax.plot(range(1, len(pca.explained_variance_ratio_) + 1), \\n",
+    "        pca.explained_variance_ratio_, 'bo-')\\n",
+    "ax.set_xlabel('Principal Component')\\n",
+    "ax.set_ylabel('Explained Variance Ratio')\\n",
+    "ax.set_title('Explained Variance by Component')\\n",
+    "ax.grid(True, alpha=0.3)\\n",
+    "\\n",
+    "# Cumulative explained variance\\n",
+    "ax = axes[1]\\n",
+    "cumulative_variance = np.cumsum(pca.explained_variance_ratio_)
+ax.plot(range(1, len(cumulative_variance) + 1), cumulative_variance, 'ro-')
+ax.axhline(y=0.95, color='k', linestyle='--', alpha=0.5, label='95% Variance')
+ax.set_xlabel('Number of Components')
+ax.set_ylabel('Cumulative Explained Variance')
+ax.set_title('Cumulative Explained Variance')
+ax.legend()
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# Find number of components for 95% variance
+n_components_95 = np.argmax(cumulative_variance >= 0.95) + 1
+print(f'Components needed for 95% variance: {n_components_95}')
