@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:physionet.org)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

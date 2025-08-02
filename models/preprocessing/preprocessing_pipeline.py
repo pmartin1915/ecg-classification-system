@@ -50,7 +50,7 @@ class PreprocessingPipeline:
         Returns:
             Dictionary with all preprocessing results
         """
-        print("🚀 STARTING ECG PREPROCESSING PIPELINE")
+        print("STARTING ECG PREPROCESSING PIPELINE")
         print("=" * 60)
         
         start_time = time.time()

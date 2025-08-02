@@ -2,6 +2,10 @@
 Test script for Phase 1 data loading
 Run this to verify your setup is working correctly
 """
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+plt.ioff()  # Turn off interactive mode
 import sys
 from pathlib import Path
 
@@ -14,7 +18,7 @@ from app.utils.dataset_manager import DatasetManager, run_phase1_foundation
 
 def test_basic_loading():
     """Test basic data loading functionality"""
-    print("🧪 TESTING PHASE 1 DATA LOADING")
+    print("TESTING PHASE 1 DATA LOADING")
     print("=" * 60)
     
     # Test 1: Load a tiny subset
@@ -27,12 +31,12 @@ def test_basic_loading():
         )
         
         if len(X) > 0:
-            print("✅ Basic loading test passed!")
+            print("OK: Basic loading test passed!")
             print(f"   Loaded shape: {X.shape}")
         else:
-            print("❌ No data loaded")
+            print("ERROR: No data loaded")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"ERROR: Error: {e}")
         return False
     
     # Test 2: Dataset Manager
@@ -42,22 +46,22 @@ def test_basic_loading():
         results = manager.load_ptbxl_complete(max_records=5)
         
         if results['stats']['total_records'] > 0:
-            print("✅ DatasetManager test passed!")
+            print("OK: DatasetManager test passed!")
         else:
-            print("❌ DatasetManager failed to load data")
+            print("ERROR: DatasetManager failed to load data")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"ERROR: Error: {e}")
         return False
     
     print("\n" + "=" * 60)
-    print("✅ All tests passed! Your Phase 1 setup is working correctly.")
+    print("SUCCESS: All tests passed! Your Phase 1 setup is working correctly.")
     return True
 
 
 def test_full_loading():
     """Test loading the full dataset (use with caution - takes time!)"""
-    print("\n🚀 LOADING FULL DATASET")
-    print("⚠️  This will take several minutes...")
+    print("\nLOADING FULL DATASET")
+    print("WARNING: This will take several minutes...")
     
     manager = DatasetManager()
     results = manager.load_ptbxl_complete(
@@ -81,7 +85,7 @@ if __name__ == "__main__":
         if response.lower() == 'y':
             test_full_loading()
     else:
-        print("\n❌ Please fix the errors before proceeding.")
+        print("\nERROR: Please fix the errors before proceeding.")
         print("\nCommon issues:")
         print("1. Make sure you've installed all requirements: pip install -r requirements.txt")
         print("2. Check that you have internet connection for downloading data")

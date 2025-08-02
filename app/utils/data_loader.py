@@ -6,6 +6,7 @@ import ast
 import os
 import pickle
 import gc
+import scipy.io
 from pathlib import Path
 from collections import Counter
 from typing import Tuple, List, Optional, Dict, Any
@@ -50,7 +51,7 @@ class ECGDataLoader:
         scp_file = self.data_path / metadata_files["scp_statements"]
         
         if db_file.exists() and scp_file.exists():
-            print("✅ PTB-XL metadata files already exist")
+            print("OK: PTB-XL metadata files already exist")
             return self.data_path
         
         # Download files using urllib instead of wget for portability
@@ -62,7 +63,7 @@ class ECGDataLoader:
                 print(f"Downloading {filename}...")
                 url = urls[file_key]
                 urllib.request.urlretrieve(url, filepath)
-                print(f"✅ Downloaded {filename}")
+                print(f"OK: Downloaded {filename}")
         
         return self.data_path
     
@@ -77,6 +78,9 @@ class ECGDataLoader:
     
     def _load_ptbxl_metadata(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Load PTB-XL metadata"""
+        # Ensure metadata is downloaded
+        self._download_ptbxl_metadata()
+        
         # Load main database
         db_file = self.data_path / self.dataset_config["metadata_files"]["database"]
         scp_file = self.data_path / self.dataset_config["metadata_files"]["scp_statements"]
@@ -98,7 +102,7 @@ class ECGDataLoader:
             ))
         )
         
-        print(f"✅ Loaded metadata for {len(Y)} records")
+        print(f"OK: Loaded metadata for {len(Y)} records")
         return Y, agg_df
     
     def filter_by_conditions(self, Y: pd.DataFrame, 
@@ -127,7 +131,7 @@ class ECGDataLoader:
         
         Y_filtered = Y[Y['diagnostic_superclass'].apply(has_target_condition)]
         
-        print(f"\n✅ Filtered dataset: {len(Y_filtered):,} records")
+        print(f"\nOK: Filtered dataset: {len(Y_filtered):,} records")
         print(f"   Reduction: {((len(Y) - len(Y_filtered)) / len(Y) * 100):.1f}%")
         
         return Y_filtered
@@ -153,10 +157,22 @@ class ECGDataLoader:
             print(f"Loading from cache: {cache_file}")
             try:
                 with open(cache_file, 'rb') as f:
-                    return pickle.load(f)
+                    signals_array, labels, record_ids = pickle.load(f)
+                
+                # Verify cache integrity
+                if len(signals_array) == len(df_subset):
+                    print(f"OK: Cache loaded successfully with {len(signals_array)} records.")
+                    return signals_array, labels, record_ids
+                else:
+                    print(f"WARNING: Cache mismatch. Expected {len(df_subset)} records, found {len(signals_array)}.")
+                    print("Discarding invalid cache file.")
+                    cache_file.unlink()
+                    # Continue to load fresh data
+                    
             except Exception as e:
-                print(f"Cache error: {e}. Loading fresh data.")
-                cache_file.unlink()
+                print(f"ERROR: Cache error: {e}. Deleting cache and loading fresh data.")
+                if cache_file.exists():
+                    cache_file.unlink()
         
         # Download missing files first
         self._download_missing_records(df_subset, sampling_rate)
@@ -168,7 +184,7 @@ class ECGDataLoader:
         
         if len(signals) > 0:
             signals_array = np.array(signals, dtype=np.float32)
-            print(f"✅ Loaded {len(signals):,} records")
+            print(f"OK: Loaded {len(signals):,} records")
             print(f"   Shape: {signals_array.shape}")
             print(f"   Memory: {signals_array.nbytes / (1024**3):.2f} GB")
             
@@ -212,7 +228,7 @@ class ECGDataLoader:
                     download_items.append((url, file_with_ext))
         
         if not download_items:
-            print("✅ All required files already exist")
+            print("OK: All required files already exist")
             return
         
         # Download missing files
@@ -302,7 +318,7 @@ class ArrhythmiaDataLoader(ECGDataLoader):
         for hea_file in base_path.rglob("*.hea"):
             record_files.append(hea_file.with_suffix(''))
         
-        print(f"✅ Found {len(record_files)} records")
+        print(f"OK: Found {len(record_files)} records")
         return record_files
     
     def load_records_batch(self, record_paths: List[Path], 
@@ -328,3 +344,320 @@ class ArrhythmiaDataLoader(ECGDataLoader):
             gc.collect()
         
         return records
+
+
+class ECGArrhythmiaDataLoader:
+    """
+    Enhanced loader for PhysioNet ECG Arrhythmia dataset (45,152 records)
+    Supports .mat + .hea files with comprehensive label mapping
+    """
+    
+    def __init__(self, data_path: Optional[Path] = None):
+        self.data_path = data_path or DATASET_CONFIG["ecg_arrhythmia"]["path"]
+        self.data_path.mkdir(parents=True, exist_ok=True)
+        
+        # Label mapping from ECG Arrhythmia to our TARGET_CONDITIONS
+        self.label_mapping = {
+            # MI-related conditions (critical for improving MI detection)
+            'MI': 'MI',  # Myocardial Infarction
+            'STEMI': 'MI',  # ST-elevation MI
+            'NSTEMI': 'MI',  # Non-ST-elevation MI
+            'IMI': 'MI',  # Inferior MI
+            'AMI': 'MI',  # Anterior MI
+            'LMI': 'MI',  # Lateral MI
+            
+            # Normal conditions
+            'NORM': 'NORM',  # Normal sinus rhythm
+            'NSR': 'NORM',  # Normal sinus rhythm
+            'SB': 'NORM',    # Sinus bradycardia (can be normal)
+            'ST': 'NORM',    # Sinus tachycardia (can be normal)
+            
+            # ST/T Changes
+            'STTC': 'STTC',  # ST/T Changes
+            'STD': 'STTC',   # ST Depression
+            'STE': 'STTC',   # ST Elevation
+            'INVT': 'STTC',  # Inverted T waves
+            'TAB': 'STTC',   # T wave abnormality
+            
+            # Conduction Disorders
+            'CD': 'CD',      # Conduction Disorders
+            'RBBB': 'CD',    # Right bundle branch block
+            'LBBB': 'CD',    # Left bundle branch block
+            'BBB': 'CD',     # Bundle branch block
+            'IVCD': 'CD',    # Intraventricular conduction delay
+            'AVB': 'CD',     # AV block
+            'WPW': 'CD',     # Wolff-Parkinson-White
+            
+            # Hypertrophy
+            'HYP': 'HYP',    # Hypertrophy
+            'LVH': 'HYP',    # Left ventricular hypertrophy
+            'RVH': 'HYP',    # Right ventricular hypertrophy
+            'LAE': 'HYP',    # Left atrial enlargement
+            'RAE': 'HYP',    # Right atrial enlargement
+            
+            # Arrhythmias - map to closest category or exclude
+            'AFIB': 'CD',    # Atrial fibrillation -> Conduction disorder
+            'AFL': 'CD',     # Atrial flutter -> Conduction disorder
+            'AT': 'CD',      # Atrial tachycardia -> Conduction disorder
+            'PVC': 'CD',     # Premature ventricular contraction -> Conduction disorder
+            'PAC': 'CD',     # Premature atrial contraction -> Conduction disorder
+        }
+    
+    def scan_dataset_structure(self) -> Dict[str, Any]:
+        """Scan the dataset to understand structure and available records"""
+        print("=== SCANNING ECG ARRHYTHMIA DATASET ===")
+        
+        if not self.data_path.exists():
+            print(f"❌ Dataset path not found: {self.data_path}")
+            return {"total_records": 0, "folders": [], "sample_files": []}
+        
+        # Look for WFDBRecords folder structure
+        wfdb_path = self.data_path / "WFDBRecords"
+        if not wfdb_path.exists():
+            # Try alternative paths
+            for alt_path in ["physionet.org/files/ecg-arrhythmia/1.0.0/WFDBRecords", 
+                           "ecg-arrhythmia/1.0.0/WFDBRecords"]:
+                alt_full_path = self.data_path / alt_path
+                if alt_full_path.exists():
+                    wfdb_path = alt_full_path
+                    break
+        
+        if not wfdb_path.exists():
+            print(f"❌ WFDBRecords folder not found in: {self.data_path}")
+            return {"total_records": 0, "folders": [], "sample_files": []}
+        
+        # Scan folder structure
+        folders = [f for f in wfdb_path.iterdir() if f.is_dir()]
+        folders.sort()
+        
+        # Count total records
+        total_records = 0
+        sample_files = []
+        
+        for folder in folders[:3]:  # Check first 3 folders for structure
+            subfolders = [sf for sf in folder.iterdir() if sf.is_dir()]
+            for subfolder in subfolders[:2]:  # Check first 2 subfolders
+                mat_files = list(subfolder.glob("*.mat"))
+                hea_files = list(subfolder.glob("*.hea"))
+                total_records += len(mat_files)
+                
+                if sample_files == [] and mat_files:
+                    sample_files = [mat_files[0], hea_files[0] if hea_files else None]
+        
+        # Estimate total based on structure (46 folders × 10 subfolders × ~100 records)
+        estimated_total = len(folders) * 10 * 100
+        
+        print(f"OK: Found {len(folders)} top-level folders")
+        print(f"OK: Estimated {estimated_total} total records")
+        
+        return {
+            "total_records": estimated_total,
+            "folders": folders,
+            "sample_files": sample_files,
+            "wfdb_path": wfdb_path
+        }
+    
+    def load_single_record_wfdb(self, record_path: Path) -> Optional[Dict[str, Any]]:
+        """Load a single WFDB record (.mat + .hea)"""
+        try:
+            # Use wfdb.rdsamp which handles both .dat and .mat files
+            record_name = str(record_path.with_suffix(''))
+            signal, fields = wfdb.rdsamp(record_name)
+            
+            # Extract metadata from header
+            annotation = wfdb.rdann(record_name, 'atr') if Path(f"{record_name}.atr").exists() else None
+            
+            return {
+                'signal': signal,
+                'fields': fields,
+                'annotation': annotation,
+                'record_id': record_path.stem,
+                'sampling_rate': fields.get('fs', 500),  # Default 500Hz for this dataset
+                'n_leads': signal.shape[1] if signal.ndim > 1 else 1,
+                'duration': len(signal) / fields.get('fs', 500)
+            }
+            
+        except Exception as e:
+            print(f"Error loading {record_path}: {e}")
+            return None
+    
+    def extract_labels_from_header(self, header_info: Dict) -> List[str]:
+        """Extract diagnostic labels from WFDB header information"""
+        labels = []
+        
+        # Extract from comments field which often contains diagnostic info
+        if 'comments' in header_info:
+            comments = header_info['comments']
+            if isinstance(comments, list):
+                for comment in comments:
+                    # Look for common diagnostic patterns
+                    comment_upper = comment.upper()
+                    for label_key in self.label_mapping.keys():
+                        if label_key in comment_upper:
+                            labels.append(label_key)
+        
+        # Extract from signal names if available
+        if 'sig_name' in header_info:
+            sig_names = header_info['sig_name']
+            if isinstance(sig_names, list):
+                for sig_name in sig_names:
+                    sig_name_upper = sig_name.upper()
+                    for label_key in self.label_mapping.keys():
+                        if label_key in sig_name_upper:
+                            labels.append(label_key)
+        
+        return list(set(labels))  # Remove duplicates
+    
+    def map_labels_to_target_conditions(self, raw_labels: List[str]) -> List[str]:
+        """Map raw diagnostic labels to our TARGET_CONDITIONS"""
+        mapped_labels = []
+        
+        for label in raw_labels:
+            if label in self.label_mapping:
+                target_label = self.label_mapping[label]
+                if target_label in TARGET_CONDITIONS:
+                    mapped_labels.append(target_label)
+        
+        # Default to NORM if no specific condition found
+        if not mapped_labels:
+            mapped_labels = ['NORM']
+        
+        return list(set(mapped_labels))  # Remove duplicates
+    
+    def load_records_batch(self, max_records: Optional[int] = None, 
+                          sampling_rate: int = 500,
+                          use_cache: bool = True,
+                          target_mi_records: int = 1000) -> Dict[str, Any]:
+        """
+        Load ECG Arrhythmia records with focus on MI detection
+        
+        Args:
+            max_records: Maximum total records to load
+            sampling_rate: Target sampling rate (500Hz native)
+            use_cache: Use cached results if available
+            target_mi_records: Minimum MI records to collect
+        """
+        cache_key = f"ecg_arrhythmia_{sampling_rate}hz_{max_records}_{target_mi_records}mi"
+        cache_file = CACHE_DIR / f"{cache_key}.pkl"
+        
+        if use_cache and cache_file.exists():
+            print(f"OK: Loading ECG Arrhythmia data from cache: {cache_file}")
+            with open(cache_file, 'rb') as f:
+                return pickle.load(f)
+        
+        print("=== LOADING ECG ARRHYTHMIA DATASET ===")
+        
+        # Scan dataset structure
+        structure = self.scan_dataset_structure()
+        if structure["total_records"] == 0:
+            return {"X": np.array([]), "labels": [], "record_ids": [], "stats": {}}
+        
+        wfdb_path = structure["wfdb_path"]
+        folders = structure["folders"]
+        
+        # Storage for results
+        signals = []
+        labels = []
+        record_ids = []
+        mi_count = 0
+        total_loaded = 0
+        
+        print(f"Target: {target_mi_records} MI records, {max_records or 'unlimited'} total records")
+        
+        # Iterate through folder structure
+        for folder in tqdm(folders, desc="Processing folders"):
+            if max_records and total_loaded >= max_records:
+                break
+                
+            subfolders = [sf for sf in folder.iterdir() if sf.is_dir()]
+            
+            for subfolder in subfolders:
+                if max_records and total_loaded >= max_records:
+                    break
+                    
+                # Find all .mat files in this subfolder
+                mat_files = list(subfolder.glob("*.mat"))
+                
+                for mat_file in mat_files:
+                    if max_records and total_loaded >= max_records:
+                        break
+                        
+                    # Load the record
+                    record_data = self.load_single_record_wfdb(mat_file)
+                    
+                    if record_data is None:
+                        continue
+                    
+                    # Extract and map labels
+                    raw_labels = self.extract_labels_from_header(record_data['fields'])
+                    mapped_labels = self.map_labels_to_target_conditions(raw_labels)
+                    
+                    # Prioritize MI records
+                    has_mi = 'MI' in mapped_labels
+                    if has_mi:
+                        mi_count += 1
+                    
+                    # Include record if it has MI or we haven't reached max_records
+                    if has_mi or mi_count >= target_mi_records or not max_records:
+                        # Resample if needed
+                        signal = record_data['signal']
+                        current_fs = record_data['sampling_rate']
+                        
+                        if current_fs != sampling_rate:
+                            from scipy import signal as scipy_signal
+                            # Resample to target sampling rate
+                            new_length = int(len(signal) * sampling_rate / current_fs)
+                            signal = scipy_signal.resample(signal, new_length, axis=0)
+                        
+                        # Ensure consistent shape (12 leads)
+                        if signal.ndim == 1:
+                            signal = signal.reshape(-1, 1)
+                        
+                        if signal.shape[1] < 12:
+                            # Pad with zeros if fewer than 12 leads
+                            padding = np.zeros((signal.shape[0], 12 - signal.shape[1]))
+                            signal = np.hstack([signal, padding])
+                        elif signal.shape[1] > 12:
+                            # Take first 12 leads if more than 12
+                            signal = signal[:, :12]
+                        
+                        signals.append(signal)
+                        labels.append(mapped_labels[0])  # Take primary label
+                        record_ids.append(record_data['record_id'])
+                        total_loaded += 1
+                    
+                    # Early termination if we have enough MI records
+                    if mi_count >= target_mi_records and total_loaded >= (max_records or target_mi_records * 2):
+                        break
+        
+        # Convert to arrays
+        if signals:
+            X = np.array(signals)
+            print(f"OK: Loaded {len(signals)} records ({mi_count} MI records)")
+        else:
+            X = np.array([])
+            print("❌ No records loaded")
+        
+        # Statistics
+        stats = {
+            "total_loaded": total_loaded,
+            "mi_records": mi_count,
+            "label_distribution": Counter(labels),
+            "avg_signal_length": np.mean([len(s) for s in signals]) if signals else 0,
+            "sampling_rate": sampling_rate
+        }
+        
+        result = {
+            "X": X,
+            "labels": labels,
+            "record_ids": record_ids,
+            "stats": stats
+        }
+        
+        # Cache results
+        if use_cache and signals:
+            print(f"Caching results to: {cache_file}")
+            with open(cache_file, 'wb') as f:
+                pickle.dump(result, f)
+        
+        return result

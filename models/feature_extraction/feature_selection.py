@@ -216,28 +216,24 @@ class FeatureSelector:
         
         return X_clean, to_drop
     
-    def perform_pca_analysis(self, 
-                           X: pd.DataFrame,
-                           n_components: Optional[int] = None) -> Tuple[np.ndarray, PCA, StandardScaler]:
-        """
-        Perform PCA analysis
+    def perform_pca_analysis(self, X: np.ndarray, n_components: int = 50) -> Dict:
+        """Perform PCA analysis for dimensionality reduction"""
         
-        Args:
-            X: Feature DataFrame
-            n_components: Number of components
-            
-        Returns:
-            Tuple of (transformed data, PCA object, scaler)
-        """
-        print("\n=== PCA ANALYSIS ===")
+        # FIX: Ensure n_components doesn't exceed the number of features
+        n_features = X.shape[1]
+        n_samples = X.shape[0]
         
-        n_components = n_components or min(50, X.shape[1])
+        # PCA components cannot exceed min(n_samples, n_features)
+        max_components = min(n_samples - 1, n_features)
+        if n_components > max_components:
+            print(f"⚠️  Adjusting n_components from {n_components} to {max_components}")
+            n_components = max_components
         
-        # Standardize features
+        # Scale the data
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
         
-        # Perform PCA
+        # Apply PCA
         pca = PCA(n_components=n_components)
         X_pca = pca.fit_transform(X_scaled)
         
@@ -258,7 +254,7 @@ class FeatureSelector:
         feature_contributions = pd.DataFrame(
             abs(pca.components_[:10]).T,
             columns=[f'PC{i+1}' for i in range(10)],
-            index=X.columns
+            index=range(X.shape[1])  # Use indices instead of X.columns since X is numpy array
         )
         
         # Find top contributing features for each PC

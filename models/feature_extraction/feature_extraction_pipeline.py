@@ -43,7 +43,7 @@ class FeatureExtractionPipeline:
         Returns:
             Dictionary with all extraction results
         """
-        print("🚀 STARTING ECG FEATURE EXTRACTION PIPELINE")
+        print("STARTING ECG FEATURE EXTRACTION PIPELINE")
         print("=" * 70)
         
         start_time = time.time()
@@ -122,24 +122,7 @@ class FeatureExtractionPipeline:
         )
         processing_stages['PCA Analysis'] = {'time': time.time() - stage_start}
         
-        # Step 7: Create visualizations
-        if visualize:
-            print("\n" + "=" * 50)
-            print("STEP 7: CREATING VISUALIZATIONS")
-            print("=" * 50)
-            
-            stage_start = time.time()
-            self._create_visualizations(
-                feature_df_selected,
-                y_encoded,
-                feature_importance,
-                X_pca,
-                pca,
-                label_encoder
-            )
-            processing_stages['Visualization'] = {'time': time.time() - stage_start}
-        
-        # Compile results
+        # Compile results first (before visualization so statistics are available)
         total_time = time.time() - start_time
         
         self.results = {
@@ -170,6 +153,27 @@ class FeatureExtractionPipeline:
                 'selected_percentage': (len(feature_df_selected.columns) / len(feature_df_clean.columns)) * 100
             }
         }
+        
+        # Step 7: Create visualizations (after results are compiled)
+        if visualize:
+            print("\n" + "=" * 50)
+            print("STEP 7: CREATING VISUALIZATIONS")
+            print("=" * 50)
+            
+            stage_start = time.time()
+            self._create_visualizations(
+                feature_df_selected,
+                y_encoded,
+                feature_importance,
+                X_pca,
+                pca,
+                label_encoder
+            )
+            # Update processing time to include visualization
+            visualization_time = time.time() - stage_start
+            processing_stages['Visualization'] = {'time': visualization_time}
+            self.results['statistics']['processing_stages'] = processing_stages
+            self.results['statistics']['processing_time'] = time.time() - start_time
         
         # Save results
         if use_cache:
