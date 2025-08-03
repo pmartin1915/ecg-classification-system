@@ -291,6 +291,20 @@ def show_about():
     This comprehensive ECG Classification System is designed as a **professional-grade educational tool** 
     for training future doctors and nurse practitioners in advanced cardiac diagnostics.
     
+    ## 🔍 How the Program Works
+    
+    **Simple 3-Step Process:**
+    
+    1. **📊 Data Input**: Upload your ECG files (CSV/TXT format) or use our comprehensive dataset of 66,540 physician-validated records
+    
+    2. **🧠 AI Analysis**: Our advanced machine learning system analyzes 894 clinical features including heart rate, rhythm patterns, wave morphology, and electrical conduction to identify cardiac conditions
+    
+    3. **📋 Professional Results**: Get instant classification with confidence scores, clinical priority levels, and detailed AI explanations showing exactly why specific diagnoses were made
+    
+    **Behind the Scenes:** The system uses ensemble machine learning algorithms trained on massive datasets from leading medical institutions. It extracts temporal, frequency, and wavelet features from ECG signals, then applies clinical decision rules used by cardiologists worldwide. The AI explainability feature shows students the step-by-step reasoning process, making it perfect for medical education.
+    
+    **Perfect for Learning:** Unlike black-box systems, every diagnosis comes with transparent explanations of which ECG features led to the conclusion, helping students understand real cardiology principles while gaining hands-on experience with cutting-edge medical AI technology.
+    
     ### 🏥 Educational Excellence
     - **30 Cardiac Conditions**: Complete spectrum from basic rhythms to complex arrhythmias
     - **Clinical Case Studies**: Interactive scenarios with expert teaching points

@@ -21,7 +21,8 @@
       "Bash(pip install:*)",
       "Bash(pip uninstall:*)",
       "Bash(echo:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(STREAMLINED_LAUNCHER.bat /?)"
     ],
     "deny": []
   }
