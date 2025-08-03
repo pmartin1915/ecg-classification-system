@@ -20,7 +20,8 @@
       "Bash(dir)",
       "Bash(pip install:*)",
       "Bash(pip uninstall:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

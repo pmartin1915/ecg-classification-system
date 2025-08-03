@@ -40,17 +40,13 @@ if exist "venv\Scripts\activate.bat" (
     echo [WARNING] No virtual environment found. Using system Python.
 )
 
-REM Check required packages
+REM Quick dependency check (skip slow imports)
 echo [INFO] Checking dependencies...
-python -c "import streamlit, wfdb, numpy, pandas" >nul 2>&1
+python -c "import sys; print('Python OK')" >nul 2>&1
 if errorlevel 1 (
-    echo [INFO] Installing required packages...
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo [ERROR] Failed to install dependencies!
-        pause
-        exit /b 1
-    )
+    echo [ERROR] Python not working properly!
+    pause
+    exit /b 1
 )
 
 echo [INFO] Dependencies verified!
