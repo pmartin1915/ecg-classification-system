@@ -177,9 +177,9 @@ class ECGDataLoader:
         # Download missing files first
         self._download_missing_records(df_subset, sampling_rate)
         
-        # Load signals in parallel
+        # Load signals (disable parallel processing for stability on Windows)
         signals, labels, record_ids = self._parallel_load_signals(
-            df_subset, sampling_rate, batch_size, n_jobs
+            df_subset, sampling_rate, batch_size, n_jobs=1  # Force single-threaded
         )
         
         if len(signals) > 0:
@@ -188,11 +188,16 @@ class ECGDataLoader:
             print(f"   Shape: {signals_array.shape}")
             print(f"   Memory: {signals_array.nbytes / (1024**3):.2f} GB")
             
-            # Save to cache
+            # Save to cache (with memory optimization)
             if use_cache:
-                print(f"Saving to cache: {cache_file}")
-                with open(cache_file, 'wb') as f:
-                    pickle.dump((signals_array, labels, record_ids), f)
+                try:
+                    print(f"Saving to cache: {cache_file}")
+                    with open(cache_file, 'wb') as f:
+                        pickle.dump((signals_array, labels, record_ids), f, protocol=pickle.HIGHEST_PROTOCOL)
+                except MemoryError:
+                    print("Warning: Cache save failed due to memory constraints - continuing without cache")
+                except Exception as e:
+                    print(f"Warning: Cache save failed: {e} - continuing without cache")
             
             return signals_array, labels, record_ids
         else:

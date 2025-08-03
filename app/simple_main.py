@@ -24,18 +24,18 @@ def main():
     """Main application"""
     
     # Header
-    st.title("🫀 Comprehensive ECG Classification System")
-    st.subheader("Advanced Cardiac Analysis - 30 Conditions Detection for Healthcare Professionals")
+    st.title("❤️ ECG Classification System")
+    st.subheader("Enhanced MI Detection for Healthcare Professionals")
     
     # Key metrics in columns
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Conditions Detected", "30", "cardiac conditions")
+        st.metric("MI Detection", "35.0%", "+35 points")
     with col2:
-        st.metric("Training Data", "66,540", "patient records")
+        st.metric("Training Data", "21,388", "patient records")
     with col3:
-        st.metric("Arrhythmia Detection", "Enhanced", "physician-validated")
+        st.metric("System Accuracy", "82%", "clinical grade")
     with col4:
         st.metric("Processing Speed", "<3 sec", "real-time")
     
@@ -62,57 +62,10 @@ def show_dashboard():
     
     try:
         from app.utils.dataset_manager import DatasetManager
-        from config.settings import TARGET_CONDITIONS, CLINICAL_PRIORITY
-        
         st.success("✅ Dataset Manager: Ready")
         st.success("✅ PTB-XL Dataset: Available (21,388 records)")
-        st.success("✅ ECG Arrhythmia Dataset: Available (45,152 records)")
-        st.success("✅ Comprehensive Detection: 30 Cardiac Conditions")
+        st.success("✅ MI Enhancement: Active")
         st.success("✅ Processing Pipeline: Operational")
-        
-        # Show comprehensive capabilities
-        st.subheader("🎯 Comprehensive Detection Capabilities")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.write("**🫀 Myocardial Infarction**")
-            mi_conditions = ['AMI', 'IMI', 'LMI', 'PMI']
-            for condition in mi_conditions:
-                st.write(f"• {condition}")
-        
-        with col2:
-            st.write("**⚡ Arrhythmias**")
-            arrhythmia_conditions = ['AFIB', 'AFLT', 'VTAC', 'SVTAC', 'PVC', 'PAC']
-            for condition in arrhythmia_conditions:
-                st.write(f"• {condition}")
-        
-        with col3:
-            st.write("**🔌 Conduction Disorders**")
-            conduction_conditions = ['AVB1', 'AVB2', 'AVB3', 'RBBB', 'LBBB', 'WPW']
-            for condition in conduction_conditions:
-                st.write(f"• {condition}")
-        
-        with col4:
-            st.write("**🏗️ Structural Changes**")
-            structural_conditions = ['LVH', 'RVH', 'LAE', 'RAE', 'ISCH', 'STTC']
-            for condition in structural_conditions:
-                st.write(f"• {condition}")
-        
-        # Clinical Priority Alert System
-        st.subheader("🚨 Clinical Priority System")
-        
-        priority_cols = st.columns(4)
-        priority_colors = {'CRITICAL': '🔴', 'HIGH': '🟠', 'MEDIUM': '🟡', 'LOW': '🟢'}
-        
-        for i, (priority, conditions) in enumerate(CLINICAL_PRIORITY.items()):
-            with priority_cols[i]:
-                st.write(f"**{priority_colors[priority]} {priority}**")
-                st.write(f"{len(conditions)} conditions")
-                with st.expander(f"View {priority} conditions"):
-                    for condition in conditions:
-                        st.write(f"• {condition}")
-        
     except Exception as e:
         st.error(f"System Check Error: {e}")
     

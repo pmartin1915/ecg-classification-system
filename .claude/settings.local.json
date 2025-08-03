@@ -2,7 +2,25 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:physionet.org)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(cat:*)",
+      "Bash(python test:*)",
+      "Bash(find:*)",
+      "Bash(python:*)",
+      "Bash(timeout:*)",
+      "Bash(streamlit run:*)",
+      "Bash(launch_ecg_system.bat)",
+      "Bash(touch:*)",
+      "Bash(dir datacache /s)",
+      "Bash(del datacache*.pkl)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(dir)",
+      "Bash(pip install:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

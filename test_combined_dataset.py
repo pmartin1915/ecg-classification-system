@@ -31,22 +31,22 @@ def test_ecg_arrhythmia_dataset_scan():
     print(f"Top-level folders found: {len(structure['folders'])}")
     
     if structure['total_records'] > 0:
-        print("✅ ECG Arrhythmia dataset structure detected successfully")
+        print("OK: ECG Arrhythmia dataset structure detected successfully")
         
         # Test loading a few sample records
         print("\nTesting sample record loading...")
         sample_data = loader.load_records_batch(max_records=10, target_mi_records=5)
         
         if len(sample_data['X']) > 0:
-            print(f"✅ Loaded {len(sample_data['X'])} sample records")
+            print(f"OK: Loaded {len(sample_data['X'])} sample records")
             print(f"   MI records found: {sample_data['stats']['mi_records']}")
             print(f"   Label distribution: {sample_data['stats']['label_distribution']}")
             return True
         else:
-            print("❌ No sample records loaded")
+            print("ERROR: No sample records loaded")
             return False
     else:
-        print("❌ ECG Arrhythmia dataset not found or inaccessible")
+        print("ERROR: ECG Arrhythmia dataset not found or inaccessible")
         print("\nTo use this functionality, you need to:")
         print("1. Download the ECG Arrhythmia dataset from PhysioNet")
         print("2. Place it in: data/raw/ecg-arrhythmia-dataset/")
@@ -71,7 +71,7 @@ def test_combined_dataset_loading():
         )
         
         if len(X) > 0:
-            print(f"✅ Combined dataset loaded successfully!")
+            print(f"OK: Combined dataset loaded successfully!")
             print(f"   Total records: {len(X):,}")
             print(f"   Signal shape: {X.shape}")
             print(f"   Memory usage: {stats['memory_gb']:.3f} GB")
@@ -98,11 +98,11 @@ def test_combined_dataset_loading():
             return True, stats
             
         else:
-            print("❌ Combined dataset loading failed - no records loaded")
+            print("ERROR: Combined dataset loading failed - no records loaded")
             return False, None
             
     except Exception as e:
-        print(f"❌ Error during combined dataset loading: {e}")
+        print(f"ERROR: Error during combined dataset loading: {e}")
         import traceback
         traceback.print_exc()
         return False, None
@@ -117,7 +117,7 @@ def test_phase4_with_combined_dataset():
     success, stats = test_combined_dataset_loading()
     
     if not success:
-        print("❌ Cannot test Phase 4 - combined dataset loading failed")
+        print("ERROR: Cannot test Phase 4 - combined dataset loading failed")
         return False
     
     try:
@@ -136,7 +136,7 @@ def test_phase4_with_combined_dataset():
         )
         
         if len(X) == 0:
-            print("❌ No data loaded for training")
+            print("ERROR: No data loaded for training")
             return False
         
         # Run feature extraction (minimal)
@@ -198,7 +198,7 @@ def test_phase4_with_combined_dataset():
         return True
         
     except Exception as e:
-        print(f"❌ Error during Phase 4 testing: {e}")
+        print(f"ERROR: Error during Phase 4 testing: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -228,14 +228,14 @@ def main():
     print("=" * 80)
     
     if structure_test:
-        print("✅ ECG Arrhythmia dataset integration: READY")
+        print("OK: ECG Arrhythmia dataset integration: READY")
         print("\nNEXT STEPS:")
         print("1. Download full ECG Arrhythmia dataset if not already done")
         print("2. Run with larger record counts for production training")
         print("3. Monitor MI detection sensitivity improvements")
         print("4. Consider adjusting label mapping if needed")
     else:
-        print("❌ ECG Arrhythmia dataset integration: NOT READY")
+        print("ERROR: ECG Arrhythmia dataset integration: NOT READY")
         print("\nREQUIRED ACTIONS:")
         print("1. Download ECG Arrhythmia dataset from PhysioNet")
         print("2. Extract to data/raw/ecg-arrhythmia-dataset/")

@@ -35,8 +35,61 @@ DATASET_CONFIG = {
     }
 }
 
-# Model configuration
-TARGET_CONDITIONS = ['NORM', 'MI', 'STTC', 'CD', 'HYP']
+# Model configuration - COMPREHENSIVE CARDIAC DETECTION
+# Expanded from 5 basic to 30 comprehensive cardiac conditions
+TARGET_CONDITIONS = [
+    # === NORMAL ===
+    'NORM',           # Normal ECG
+    
+    # === MYOCARDIAL INFARCTION (Multiple Types) ===
+    'AMI',            # Anterior MI (includes ASMI, ALMI)
+    'IMI',            # Inferior MI (includes ILMI, IPLMI, IPMI)
+    'LMI',            # Lateral MI
+    'PMI',            # Posterior MI
+    
+    # === ARRHYTHMIAS & RHYTHM DISORDERS ===
+    'PVC',            # Premature Ventricular Contractions
+    'PAC',            # Premature Atrial Contractions
+    'AFIB',           # Atrial Fibrillation
+    'AFLT',           # Atrial Flutter
+    'SVTAC',          # Supraventricular Tachycardia
+    'VTAC',           # Ventricular Tachycardia
+    
+    # === CONDUCTION DISORDERS ===
+    'AVB1',           # 1st Degree AV Block
+    'AVB2',           # 2nd Degree AV Block
+    'AVB3',           # 3rd Degree AV Block (Complete Heart Block)
+    'RBBB',           # Right Bundle Branch Block (complete/incomplete)
+    'LBBB',           # Left Bundle Branch Block (complete/incomplete)
+    'LAFB',           # Left Anterior Fascicular Block
+    'LPFB',           # Left Posterior Fascicular Block
+    'IVCD',           # Intraventricular Conduction Delay
+    'WPW',            # Wolff-Parkinson-White Syndrome
+    
+    # === HYPERTROPHY & CHAMBER ABNORMALITIES ===
+    'LVH',            # Left Ventricular Hypertrophy
+    'RVH',            # Right Ventricular Hypertrophy
+    'LAE',            # Left Atrial Enlargement
+    'RAE',            # Right Atrial Enlargement
+    
+    # === ST-T CHANGES & ISCHEMIA ===
+    'ISCH',           # Ischemic Changes (various locations)
+    'STTC',           # Non-specific ST-T Changes
+    'LNGQT',          # Long QT Interval
+    
+    # === OTHER CLINICALLY SIGNIFICANT ===
+    'PACE',           # Paced Rhythm
+    'DIG',            # Digitalis Effect
+    'LOWT'            # Low T-wave Voltage
+]
+
+# Clinical Priority Classification
+CLINICAL_PRIORITY = {
+    'CRITICAL': ['AMI', 'IMI', 'VTAC', 'AVB3', 'LMI', 'PMI'],  # Immediate medical attention
+    'HIGH': ['PVC', 'AFIB', 'AVB2', 'LBBB', 'WPW', 'AFLT'],   # Close monitoring required
+    'MEDIUM': ['AVB1', 'RBBB', 'LVH', 'ISCH', 'SVTAC'],       # Regular follow-up
+    'LOW': ['NORM', 'STTC', 'DIG', 'LOWT', 'LAE', 'RAE']      # Routine care
+}
 SAMPLING_RATES = {
     "low": 100,   # 100 Hz
     "high": 500   # 500 Hz
