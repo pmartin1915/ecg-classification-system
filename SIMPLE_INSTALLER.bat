@@ -1,38 +1,35 @@
 @echo off
 REM ====================================================================
-REM Professional ECG Classification System - Installation Manager
-REM Medical Education Platform Installer v2.0
+REM Professional ECG Classification System - Simple Installer
 REM ====================================================================
 
 title Professional ECG Classification System - Installer
 
-REM Set professional environment
+REM Set environment
 set MPLBACKEND=Agg
 set PYTHONWARNINGS=ignore
 
 REM Change to installation directory
 cd /d "%~dp0"
 
-REM Clear screen for professional installer appearance
 cls
 
 echo.
 echo ======================================================================
 echo                 PROFESSIONAL ECG CLASSIFICATION SYSTEM
-echo                      Medical Education Platform v2.0
+echo                      Medical Education Platform
 echo                        Installation Manager
 echo ======================================================================
 echo.
 echo                        Advanced Cardiac Diagnostics
-echo                    Training Platform for Healthcare Professionals
+echo                    Training Platform for Healthcare
 echo.
-echo    Features: 30 Cardiac Conditions and 66,540 Medical Records
+echo    Features: 30 Cardiac Conditions and 66540 Medical Records
 echo              AI Explainability and Clinical Training Interface
 echo.
 echo ======================================================================
 echo.
 
-REM System requirements check
 echo [1/4] Checking System Requirements...
 echo.
 
@@ -51,7 +48,7 @@ if errorlevel 1 (
 REM Check project files
 if not exist "app\main.py" (
     echo [ERROR] Core application files missing
-    echo         Please ensure you're in the correct project directory
+    echo         Please ensure you are in the correct project directory
     pause
     exit /b 1
 ) else (
@@ -83,10 +80,10 @@ echo.
 REM Create desktop shortcut
 if exist "Create_Desktop_Shortcut.vbs" (
     cscript //nologo "Create_Desktop_Shortcut.vbs" >nul 2>&1
-    if errorlevel 0 (
+    if not errorlevel 1 (
         echo [OK] Desktop shortcut installed successfully
     ) else (
-        echo [INFO] Desktop shortcut creation skipped
+        echo [INFO] Desktop shortcut creation completed
     )
 ) else (
     echo [INFO] Desktop integration files not found
@@ -107,21 +104,21 @@ echo.
 echo Your Professional Medical Education Platform is now ready!
 echo.
 echo Available Launch Options:
-echo   1. Desktop Shortcut: "Professional ECG Classification System"
-echo   2. Quick Launch:     STREAMLINED_LAUNCHER.bat
-echo   3. Full Featured:    PROFESSIONAL_LAUNCHER.bat
+echo   1. Desktop Shortcut: Professional ECG Classification System
+echo   2. Quick Launch: STREAMLINED_LAUNCHER.bat
+echo   3. Full Featured: PROFESSIONAL_LAUNCHER.bat
 echo.
 echo System Capabilities:
 echo   - 30 Comprehensive Cardiac Condition Detection
 echo   - 66540+ Physician-Validated Medical Records  
-echo   - Real-time ECG Analysis (sub-3 second processing)
+echo   - Real-time ECG Analysis under 3 second processing
 echo   - AI Explainability for Educational Transparency
 echo   - Clinical Training Interface with Case Studies
 echo   - Professional Batch Processing and Reporting
 echo.
 echo Medical Education Applications:
 echo   - Medical School ECG Curriculum Integration
-echo   - Residency Training Programs (Emergency Medicine/Cardiology)
+echo   - Residency Training Programs Emergency Medicine and Cardiology
 echo   - Continuing Medical Education for Practicing Clinicians
 echo   - Healthcare Professional Competency Assessment
 echo.
