@@ -11,6 +11,12 @@ streamlit run app/main.py
 
 # With ngrok for sharing
 python app/main.py --use-ngrok
+
+# Windows batch launchers (various configurations)
+QUICK_LAUNCH.bat                 # Simple launch
+LAUNCH_ECG_COMPREHENSIVE.bat     # Full featured launch
+PROFESSIONAL_LAUNCHER.bat        # Professional configuration
+STREAMLINED_LAUNCHER.bat         # Optimized launch
 ```
 
 ### Testing Phase Components
@@ -30,7 +36,13 @@ python test_imports.py
 
 ### Installation
 ```bash
+# Install dependencies
 pip install -r requirements.txt
+
+# Windows installation helpers
+ECG_PROFESSIONAL_INSTALLER.bat   # Professional setup
+SIMPLE_INSTALLER.bat             # Basic installation
+INSTALL_DESKTOP_SHORTCUT.bat     # Create desktop shortcuts
 ```
 
 ## Architecture Overview
@@ -71,12 +83,21 @@ This is an ECG classification system built for clinical decision support that fo
 - Comprehensive evaluation and visualization
 - Configurable through `config/model_config.py`
 
-### Target Classifications
+### Target Classifications (Comprehensive - 30 Conditions)
+The system has been expanded from 5 basic to 30 comprehensive cardiac conditions:
+
+**Core Original Classifications:**
 - **NORM**: Normal sinus rhythm
-- **MI**: Myocardial Infarction
+- **MI**: Myocardial Infarction (multiple types: AMI, IMI, LMI, PMI)
 - **STTC**: ST/T Changes  
 - **CD**: Conduction Disorders
 - **HYP**: Hypertrophy
+
+**Enhanced Detection Includes:**
+- Multiple MI types (Anterior, Inferior, Lateral, Posterior)
+- Comprehensive arrhythmias and rhythm disorders
+- Conduction abnormalities
+- Axis deviations and chamber enlargements
 
 ### Key Architecture Principles
 - **Configuration-driven**: All components use config classes for easy parameter tuning

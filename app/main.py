@@ -15,17 +15,21 @@ sys.path.append(str(project_root))
 
 # Set page configuration
 st.set_page_config(
-    page_title="ECG Classification System",
-    page_icon="❤️",
-    layout="wide"
+    page_title="ECG Classification System - Clinical Training Platform",
+    page_icon="⚕️",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 def main():
     """Main application"""
     
     # Header
-    st.title("🫀 Comprehensive ECG Classification System")
-    st.subheader("Advanced Cardiac Analysis - 30 Conditions Detection for Healthcare Professionals")
+    st.title("Comprehensive ECG Classification System")
+    st.subheader("Clinical Training Platform - Advanced Cardiac Diagnostic Education for Healthcare Professionals")
+    
+    # Clinical Disclaimer
+    st.info("⚠️ **EDUCATIONAL USE ONLY** - This system is designed for medical education and training purposes. Not intended for clinical decision-making without professional medical supervision.")
     
     # Key metrics in columns
     col1, col2, col3, col4 = st.columns(4)
@@ -70,50 +74,57 @@ def show_dashboard():
         from app.utils.dataset_manager import DatasetManager
         from config.settings import TARGET_CONDITIONS, CLINICAL_PRIORITY
         
-        st.success("✅ Dataset Manager: Ready")
-        st.success("✅ PTB-XL Dataset: Available (21,388 records)")
-        st.success("✅ ECG Arrhythmia Dataset: Available (45,152 records)")
-        st.success("✅ Comprehensive Detection: 30 Cardiac Conditions")
-        st.success("✅ Processing Pipeline: Operational")
+        st.success("**Dataset Manager:** Operational")
+        st.success("**PTB-XL Dataset:** Available (21,388 physician-validated records)")
+        st.success("**ECG Arrhythmia Dataset:** Available (45,152 clinical records)")
+        st.success("**Diagnostic Capabilities:** 30 Cardiac Conditions")
+        st.success("**Processing Pipeline:** Fully Operational")
         
         # Show comprehensive capabilities
-        st.subheader("🎯 Comprehensive Detection Capabilities")
+        st.subheader("Clinical Diagnostic Capabilities")
         
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.write("**🫀 Myocardial Infarction**")
+            st.write("**Myocardial Infarction (MI)**")
             mi_conditions = ['AMI', 'IMI', 'LMI', 'PMI']
             for condition in mi_conditions:
                 st.write(f"• {condition}")
         
         with col2:
-            st.write("**⚡ Arrhythmias**")
+            st.write("**Cardiac Arrhythmias**")
             arrhythmia_conditions = ['AFIB', 'AFLT', 'VTAC', 'SVTAC', 'PVC', 'PAC']
             for condition in arrhythmia_conditions:
                 st.write(f"• {condition}")
         
         with col3:
-            st.write("**🔌 Conduction Disorders**")
+            st.write("**Conduction Disorders**")
             conduction_conditions = ['AVB1', 'AVB2', 'AVB3', 'RBBB', 'LBBB', 'WPW']
             for condition in conduction_conditions:
                 st.write(f"• {condition}")
         
         with col4:
-            st.write("**🏗️ Structural Changes**")
+            st.write("**Structural Abnormalities**")
             structural_conditions = ['LVH', 'RVH', 'LAE', 'RAE', 'ISCH', 'STTC']
             for condition in structural_conditions:
                 st.write(f"• {condition}")
         
         # Clinical Priority Alert System
-        st.subheader("🚨 Clinical Priority System")
+        st.subheader("Clinical Priority Classification System")
         
         priority_cols = st.columns(4)
-        priority_colors = {'CRITICAL': '🔴', 'HIGH': '🟠', 'MEDIUM': '🟡', 'LOW': '🟢'}
+        priority_indicators = {'CRITICAL': 'PRIORITY: Critical', 'HIGH': 'PRIORITY: High', 'MEDIUM': 'PRIORITY: Moderate', 'LOW': 'PRIORITY: Low'}
         
         for i, (priority, conditions) in enumerate(CLINICAL_PRIORITY.items()):
             with priority_cols[i]:
-                st.write(f"**{priority_colors[priority]} {priority}**")
+                if priority == 'CRITICAL':
+                    st.error(f"**{priority_indicators[priority]}**")
+                elif priority == 'HIGH':
+                    st.warning(f"**{priority_indicators[priority]}**")
+                elif priority == 'MEDIUM':
+                    st.info(f"**{priority_indicators[priority]}**")
+                else:
+                    st.success(f"**{priority_indicators[priority]}**")
                 st.write(f"{len(conditions)} conditions")
                 with st.expander(f"View {priority} conditions"):
                     for condition in conditions:
@@ -228,26 +239,26 @@ def show_results_with_explanation():
         st.subheader("Classification Result")
         
         if predicted == 'AMI':
-            st.error(f"🚨 CRITICAL: {predicted}")
-            st.error(f"Confidence: {confidence:.1f}%")
-            st.error("Immediate medical attention required")
+            st.error(f"**PRIORITY: Critical - {predicted}**")
+            st.error(f"Diagnostic Confidence: {confidence:.1f}%")
+            st.error("**Clinical Note:** Immediate medical evaluation indicated")
         elif predicted == 'AFIB':
-            st.warning(f"🟠 HIGH PRIORITY: {predicted}")
-            st.warning(f"Confidence: {confidence:.1f}%")
-            st.warning("Close monitoring required")
+            st.warning(f"**PRIORITY: High - {predicted}**")
+            st.warning(f"Diagnostic Confidence: {confidence:.1f}%")
+            st.warning("**Clinical Note:** Continuous monitoring recommended")
         else:
-            st.success(f"Classification: {predicted}")
-            st.info(f"Confidence: {confidence:.1f}%")
+            st.success(f"**Diagnostic Classification:** {predicted}")
+            st.info(f"**Diagnostic Confidence:** {confidence:.1f}%")
         
         # Show all probabilities
-        st.subheader("Confidence Scores")
+        st.subheader("Diagnostic Probability Distribution")
         for condition, prob in zip(conditions, probabilities):
             st.write(f"{condition}: {prob*100:.1f}%")
     
     # AI Explanation Section
     st.divider()
     
-    if st.button("🧠 Show AI Explanation"):
+    if st.button("Show Diagnostic Reasoning Analysis"):
         try:
             from app.components.ai_explainability import ecg_explainer
             ecg_explainer.render_explainability_interface(predicted, confidence, ecg)
@@ -275,9 +286,9 @@ def show_demo_results():
             st.write(f"**{case['name']}**")
         with col2:
             if case['result'] == 'MI':
-                st.error(f"🚨 {case['result']}")
+                st.error(f"**CRITICAL:** {case['result']}")
             else:
-                st.success(f"✅ {case['result']}")
+                st.success(f"**DIAGNOSED:** {case['result']}")
         with col3:
             st.write(f"{case['confidence']:.1f}%")
 
@@ -286,69 +297,80 @@ def show_about():
     st.header("About Comprehensive ECG Classification System")
     
     st.markdown("""
-    ## 🎓 Professional Clinical Training Platform
+    ## Professional Clinical Training Platform
     
     This comprehensive ECG Classification System is designed as a **professional-grade educational tool** 
     for training future doctors and nurse practitioners in advanced cardiac diagnostics.
     
-    ## 🔍 How the Program Works
+    ## Clinical Analysis Workflow
     
-    **Simple 3-Step Process:**
+    **Three-Phase Diagnostic Process:**
     
-    1. **📊 Data Input**: Upload your ECG files (CSV/TXT format) or use our comprehensive dataset of 66,540 physician-validated records
+    1. **Data Acquisition**: Upload ECG files (CSV/TXT format) or utilize our comprehensive dataset of 66,540 physician-validated records
     
-    2. **🧠 AI Analysis**: Our advanced machine learning system analyzes 894 clinical features including heart rate, rhythm patterns, wave morphology, and electrical conduction to identify cardiac conditions
+    2. **Clinical Analysis**: Advanced machine learning algorithms analyze 894 clinical features including heart rate variability, rhythm patterns, wave morphology, and electrical conduction parameters to identify cardiac conditions
     
-    3. **📋 Professional Results**: Get instant classification with confidence scores, clinical priority levels, and detailed AI explanations showing exactly why specific diagnoses were made
+    3. **Diagnostic Output**: Provides immediate classification with confidence scores, clinical priority levels, and detailed diagnostic reasoning analysis
     
-    **Behind the Scenes:** The system uses ensemble machine learning algorithms trained on massive datasets from leading medical institutions. It extracts temporal, frequency, and wavelet features from ECG signals, then applies clinical decision rules used by cardiologists worldwide. The AI explainability feature shows students the step-by-step reasoning process, making it perfect for medical education.
+    **Technical Implementation:** The system employs ensemble machine learning algorithms trained on comprehensive datasets from leading medical institutions. It extracts temporal, frequency, and wavelet features from ECG signals, then applies evidence-based clinical decision rules established in cardiovascular medicine. The diagnostic reasoning feature provides students with transparent analysis of feature importance and decision pathways.
     
-    **Perfect for Learning:** Unlike black-box systems, every diagnosis comes with transparent explanations of which ECG features led to the conclusion, helping students understand real cardiology principles while gaining hands-on experience with cutting-edge medical AI technology.
+    **Educational Applications:** This transparent diagnostic system allows students to understand the clinical reasoning process behind each classification, facilitating comprehension of cardiovascular pathophysiology and diagnostic principles while providing exposure to contemporary medical AI technology.
     
-    ### 🏥 Educational Excellence
+    ### Educational Excellence
     - **30 Cardiac Conditions**: Complete spectrum from basic rhythms to complex arrhythmias
     - **Clinical Case Studies**: Interactive scenarios with expert teaching points
     - **AI Explainability**: Students learn WHY the AI makes specific decisions
     - **Professional Interface**: Medical-grade system suitable for healthcare education
     
-    ### 📊 Comprehensive Capabilities
+    ### Clinical Capabilities
     - **66,540 Clinical Records**: PTB-XL (21,388) + ECG Arrhythmia (45,152) datasets
     - **Physician-Validated Data**: All arrhythmia records professionally labeled
     - **Real-Time Analysis**: <3 second processing for immediate feedback
     - **Batch Processing**: Analyze thousands of records for research
     
-    ### 🧠 Advanced Features
-    - **AI Diagnostic Explanations**: Feature importance and decision process visualization
-    - **Clinical Priority System**: 🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low classifications
+    ### Advanced Diagnostic Features
+    - **Diagnostic Reasoning Analysis**: Feature importance and decision process visualization
+    - **Clinical Priority System**: Critical, High, Moderate, Low classifications
     - **Educational Case Library**: Structured training scenarios with learning objectives
     - **Professional Reporting**: Clinical-grade analysis reports and exports
     
-    ### 🎯 Target Conditions (30 Total)
+    ### Diagnostic Classifications (30 Conditions)
     
-    **🫀 Myocardial Infarction (4 types):**
-    - AMI (Anterior), IMI (Inferior), LMI (Lateral), PMI (Posterior)
+    **Myocardial Infarction (4 subtypes):**
+    - AMI (Anterior Myocardial Infarction)
+    - IMI (Inferior Myocardial Infarction) 
+    - LMI (Lateral Myocardial Infarction)
+    - PMI (Posterior Myocardial Infarction)
     
-    **⚡ Arrhythmias (6 types):**
-    - AFIB (Atrial Fibrillation), AFLT (Atrial Flutter)
-    - VTAC (Ventricular Tachycardia), SVTAC (Supraventricular Tachycardia)
-    - PVC (Premature Ventricular Contractions), PAC (Premature Atrial Contractions)
+    **Cardiac Arrhythmias (6 subtypes):**
+    - AFIB (Atrial Fibrillation)
+    - AFLT (Atrial Flutter)
+    - VTAC (Ventricular Tachycardia)
+    - SVTAC (Supraventricular Tachycardia)
+    - PVC (Premature Ventricular Contractions)
+    - PAC (Premature Atrial Contractions)
     
-    **🔌 Conduction Disorders (9 types):**
-    - AVB1/2/3 (AV Blocks), RBBB/LBBB (Bundle Branch Blocks)
-    - LAFB/LPFB (Fascicular Blocks), IVCD, WPW (Wolff-Parkinson-White)
+    **Conduction Abnormalities (9 subtypes):**
+    - AVB1/2/3 (Atrioventricular Blocks)
+    - RBBB/LBBB (Right/Left Bundle Branch Blocks)
+    - LAFB/LPFB (Left Anterior/Posterior Fascicular Blocks)
+    - IVCD (Intraventricular Conduction Delay)
+    - WPW (Wolff-Parkinson-White Syndrome)
     
-    **🏗️ Structural & Other (11 types):**
-    - LVH/RVH (Ventricular Hypertrophy), LAE/RAE (Atrial Enlargement)
-    - ISCH (Ischemic Changes), STTC (ST-T Changes), LNGQT (Long QT)
-    - PACE (Paced), DIG (Digitalis), LOWT (Low T-wave), NORM (Normal)
+    **Structural Abnormalities & Other Conditions (11 subtypes):**
+    - LVH/RVH (Left/Right Ventricular Hypertrophy)
+    - LAE/RAE (Left/Right Atrial Enlargement)
+    - ISCH (Ischemic Changes), STTC (ST-T Wave Changes)
+    - LNGQT (Long QT Syndrome), PACE (Pacemaker Rhythm)
+    - DIG (Digitalis Effect), LOWT (Low T-wave Amplitude), NORM (Normal ECG)
     
-    ### 🔬 Technical Architecture
+    ### Technical Architecture
     - **Machine Learning**: Advanced ensemble methods with 894 clinical features
     - **Data Processing**: WFDB format support for .hea/.mat files
     - **Signal Analysis**: Multi-lead ECG processing at 100-500Hz
     - **Feature Extraction**: Temporal, frequency, wavelet, and clinical parameters
     
-    ### 🎓 Educational Applications
+    ### Educational Applications
     
     **Medical Schools:**
     - Advanced ECG interpretation curriculum
@@ -365,13 +387,13 @@ def show_about():
     - Certification and competency assessment
     - Quality assurance training
     
-    ### 🏆 Clinical Impact
+    ### Clinical Impact
     - **Enhanced Learning**: Interactive AI explanations improve understanding
     - **Risk Assessment**: Clinical priority system teaches triage skills
     - **Pattern Recognition**: Exposure to thousands of validated cases
     - **Decision Support**: Professional-grade diagnostic assistance
     
-    ### 📈 Performance Metrics
+    ### Performance Metrics
     - **Diagnostic Accuracy**: 82% overall classification accuracy
     - **MI Detection**: 35% sensitivity improvement over basic systems
     - **Processing Speed**: Real-time analysis for immediate educational feedback
@@ -379,7 +401,7 @@ def show_about():
     
     ---
     
-    **🎊 Built for Excellence in Medical Education**
+    **Professional Medical Education Platform**
     
     This system represents the convergence of advanced AI technology and medical education,
     providing future healthcare professionals with the tools they need to excel in 

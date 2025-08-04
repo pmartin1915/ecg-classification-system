@@ -75,38 +75,45 @@ class ClinicalTrainingInterface:
         }
     
     def _define_learning_objectives(self) -> Dict[str, List[str]]:
-        """Define learning objectives for different training levels"""
+        """Define learning objectives for Doctor of Nursing Practice education"""
         return {
             'Beginner': [
-                'Identify normal sinus rhythm',
-                'Recognize basic arrhythmias (AFIB, VT)',
-                'Understand clinical priority levels',
-                'Basic ECG interpretation skills'
+                'Identify normal sinus rhythm and basic dysrhythmias',
+                'Recognize life-threatening arrhythmias requiring immediate intervention',
+                'Understand clinical priority classification systems',
+                'Apply evidence-based ECG interpretation principles',
+                'Demonstrate professional communication of findings'
             ],
             'Intermediate': [
-                'Differentiate MI subtypes and locations',
-                'Recognize conduction disorders',
-                'Understand hemodynamic implications',
-                'Clinical decision-making skills'
+                'Differentiate acute MI subtypes and anatomical locations',
+                'Recognize complex conduction disorders and their clinical implications',
+                'Integrate ECG findings with patient presentation and history',
+                'Apply advanced practice nursing clinical decision-making frameworks',
+                'Evaluate quality metrics and patient safety indicators'
             ],
             'Advanced': [
-                'Complex arrhythmia analysis',
-                'Subtle diagnostic findings',
-                'Risk stratification',
-                'Treatment planning'
+                'Analyze complex multi-lead ECG patterns and subtle abnormalities',
+                'Perform comprehensive cardiovascular risk stratification',
+                'Develop evidence-based treatment protocols and care pathways',
+                'Lead interdisciplinary team discussions on complex cases',
+                'Apply quality improvement methodologies to clinical practice'
             ],
             'Expert': [
-                'Rare condition recognition',
-                'Teaching and mentoring skills',
-                'Quality assurance',
-                'Research interpretation'
+                'Recognize rare and challenging cardiovascular conditions',
+                'Mentor and educate healthcare professionals in advanced practice',
+                'Lead quality assurance and performance improvement initiatives',
+                'Translate research findings into clinical practice protocols',
+                'Develop and implement evidence-based clinical guidelines'
             ]
         }
     
     def render_training_dashboard(self):
         """Render the main clinical training dashboard"""
-        st.header("🎓 Clinical Training Dashboard")
-        st.subheader("ECG Interpretation for Medical Education")
+        st.header("Clinical Training Dashboard")
+        st.subheader("Advanced ECG Interpretation for Doctor of Nursing Practice Education")
+        
+        # Educational disclaimer
+        st.warning("**EDUCATIONAL USE ONLY** - This training platform is designed for medical education purposes. Clinical decisions should always involve qualified healthcare professionals.")
         
         # Training metrics
         col1, col2, col3, col4 = st.columns(4)
@@ -139,7 +146,7 @@ class ClinicalTrainingInterface:
     
     def render_case_studies(self):
         """Render interactive case studies"""
-        st.subheader("📚 Interactive Case Studies")
+        st.subheader("Interactive Case Studies")
         
         # Case selection
         difficulty = st.selectbox("Select Difficulty Level:", self.difficulty_levels)
@@ -159,29 +166,29 @@ class ClinicalTrainingInterface:
     
     def display_training_case(self, case: Dict[str, Any]):
         """Display a comprehensive training case"""
-        st.markdown(f"### 🏥 {case['title']}")
+        st.markdown(f"### Clinical Case: {case['title']}")
         
-        # Clinical priority alert
-        priority_color = {
-            'CRITICAL': '🔴',
-            'HIGH': '🟠', 
-            'MEDIUM': '🟡',
-            'LOW': '🟢'
-        }
-        
-        st.markdown(f"**Priority Level:** {priority_color[case['priority']]} {case['priority']}")
+        # Clinical priority classification
+        if case['priority'] == 'CRITICAL':
+            st.error(f"**PRIORITY: {case['priority']}**")
+        elif case['priority'] == 'HIGH': 
+            st.warning(f"**PRIORITY: {case['priority']}**")
+        elif case['priority'] == 'MEDIUM':
+            st.info(f"**PRIORITY: {case['priority']}**")
+        else:
+            st.success(f"**PRIORITY: {case['priority']}**")
         
         # Case presentation
-        with st.expander("📋 Clinical Scenario", expanded=True):
+        with st.expander("Clinical Scenario", expanded=True):
             st.write(case['clinical_scenario'])
         
         # Learning objectives
-        with st.expander("🎯 Learning Objectives"):
+        with st.expander("Educational Learning Objectives"):
             for objective in case['learning_objectives']:
                 st.write(f"• {objective}")
         
         # Interactive ECG analysis
-        st.subheader("📊 ECG Analysis")
+        st.subheader("Electrocardiographic Analysis")
         
         # Simulated ECG display (would connect to real data)
         self.display_simulated_ecg(case['condition'])
@@ -190,7 +197,7 @@ class ClinicalTrainingInterface:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("🤔 Your Analysis")
+            st.subheader("Student Clinical Assessment")
             
             student_diagnosis = st.selectbox(
                 "What is your primary diagnosis?",
@@ -211,7 +218,7 @@ class ClinicalTrainingInterface:
                 self.evaluate_student_response(case, student_diagnosis, student_priority, student_management)
         
         with col2:
-            st.subheader("🔍 Expert Analysis")
+            st.subheader("Expert Clinical Analysis")
             
             if st.button("Show Expert Interpretation"):
                 self.show_expert_analysis(case)
@@ -332,25 +339,25 @@ class ClinicalTrainingInterface:
     
     def evaluate_student_response(self, case: Dict, diagnosis: str, priority: str, management: str):
         """Evaluate student's analysis and provide feedback"""
-        st.subheader("📝 Evaluation Results")
+        st.subheader("Clinical Assessment Results")
         
         correct_diagnosis = case['condition']
         correct_priority = case['priority']
         
         # Diagnosis evaluation
         if diagnosis == correct_diagnosis:
-            st.success(f"✅ Correct diagnosis! You identified {diagnosis} correctly.")
+            st.success(f"**Diagnostic Accuracy: CORRECT** - You correctly identified {diagnosis}.")
             diagnosis_score = 100
         else:
-            st.error(f"❌ Incorrect diagnosis. You selected {diagnosis}, but the correct answer is {correct_diagnosis}.")
+            st.error(f"**Diagnostic Accuracy: INCORRECT** - You selected {diagnosis}. Correct diagnosis: {correct_diagnosis}")
             diagnosis_score = 0
         
         # Priority evaluation
         if priority == correct_priority:
-            st.success(f"✅ Correct priority level! {priority} is appropriate.")
+            st.success(f"**Priority Assessment: CORRECT** - {priority} classification is appropriate.")
             priority_score = 100
         else:
-            st.warning(f"⚠️ Priority assessment needs work. You selected {priority}, but {correct_priority} is more appropriate.")
+            st.warning(f"**Priority Assessment: NEEDS IMPROVEMENT** - You selected {priority}. Recommended: {correct_priority}")
             priority_score = 50
         
         # Overall score
@@ -359,7 +366,7 @@ class ClinicalTrainingInterface:
         st.metric("Overall Score", f"{overall_score:.0f}%")
         
         # Learning feedback
-        st.subheader("📚 Learning Points")
+        st.subheader("Educational Learning Points")
         for point in case['teaching_points']:
             st.write(f"• {point}")
     
@@ -368,28 +375,28 @@ class ClinicalTrainingInterface:
         st.success(f"**Expert Diagnosis:** {case['condition']} - {case['title']}")
         st.info(f"**Priority Level:** {case['priority']}")
         
-        st.subheader("🔍 Key Findings")
+        st.subheader("Clinical Key Findings")
         for finding in case['key_findings']:
             st.write(f"• {finding}")
         
-        st.subheader("🤔 Differential Diagnosis")
+        st.subheader("Differential Diagnosis Considerations")
         for diff in case['differential_diagnosis']:
             st.write(f"• {diff}")
         
-        st.subheader("💊 Management")
+        st.subheader("Clinical Management")
         st.write(case['management'])
         
-        st.subheader("🎓 Teaching Points")
+        st.subheader("Educational Teaching Points")
         for point in case['teaching_points']:
             st.write(f"• {point}")
     
     def render_skill_assessment(self):
         """Render skill assessment interface"""
-        st.subheader("📊 Skill Assessment")
+        st.subheader("Clinical Competency Assessment")
         st.info("Comprehensive evaluation of ECG interpretation skills - Coming Soon!")
         
         # Progress tracking
-        st.subheader("📈 Your Progress")
+        st.subheader("Student Learning Progress")
         
         # Simulated progress data
         progress_data = {
@@ -403,7 +410,7 @@ class ClinicalTrainingInterface:
     
     def render_challenge_mode(self):
         """Render challenge mode for advanced training"""
-        st.subheader("🏆 Challenge Mode")
+        st.subheader("Advanced Clinical Challenge Assessment")
         st.info("Rapid-fire ECG interpretation challenges - Coming Soon!")
         
         st.write("Features will include:")
@@ -414,7 +421,7 @@ class ClinicalTrainingInterface:
     
     def render_free_practice(self):
         """Render free practice mode"""
-        st.subheader("🔬 Free Practice Mode")
+        st.subheader("Self-Directed Clinical Practice")
         st.info("Explore ECG database freely - Connect to your 66,540 record dataset!")
         
         st.write("Practice features:")
