@@ -45,6 +45,8 @@ def launch_application():
         print("   Models: Ensemble ML with 150+ clinical features")
         
         try:
+            # Import from app directory
+            sys.path.insert(0, str(project_root / "app"))
             import enhanced_main
             enhanced_main.main()
         except Exception as e:

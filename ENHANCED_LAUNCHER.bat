@@ -81,7 +81,7 @@ echo ----------------------------------------------------------------------
 echo.
 timeout /t 3 >nul
 start "" "http://localhost:8501"
-streamlit run app/smart_launcher.py --server.port=8501 --server.headless=false
+streamlit run app/enhanced_main.py --server.port=8501 --server.headless=false
 goto end
 
 :launch_standard
@@ -151,23 +151,7 @@ goto menu
 
 :diagnostics
 echo.
-echo ----------------------------------------------------------------------
-echo                            SYSTEM DIAGNOSTICS                       
-echo ----------------------------------------------------------------------
-python -c "import sys; print('Python Version:', sys.version.split()[0])"
-python -c "try: import streamlit; print('Streamlit:', streamlit.__version__); except: print('Streamlit: NOT INSTALLED')"
-python -c "try: import wfdb; print('WFDB:', wfdb.__version__); except: print('WFDB: NOT INSTALLED')"
-python -c "try: import numpy; print('NumPy:', numpy.__version__); except: print('NumPy: NOT INSTALLED')"
-python -c "try: import pandas; print('Pandas:', pandas.__version__); except: print('Pandas: NOT INSTALLED')"
-python -c "try: import sklearn; print('Scikit-learn:', sklearn.__version__); except: print('Scikit-learn: NOT INSTALLED')"
-python -c "import os; print('Project Directory:', 'YES' if os.path.exists('app/main.py') else 'NO')"
-python -c "import os; print('Enhanced Features:', 'YES' if os.path.exists('app/enhanced_main.py') else 'NO')"
-python -c "import os; print('Data Directory:', 'YES' if os.path.exists('data') else 'NO')"
-
-echo.
-echo Enhanced MI Model Status:
-python -c "from pathlib import Path; enhanced_models = list(Path('models/trained_models').glob('enhanced_mi_model_*.pkl')) if Path('models/trained_models').exists() else []; print(f'Enhanced Models: {len(enhanced_models)} found')"
-
+python system_diagnostics.py
 echo ----------------------------------------------------------------------
 echo.
 pause

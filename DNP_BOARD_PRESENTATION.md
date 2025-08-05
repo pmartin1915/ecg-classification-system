@@ -17,9 +17,9 @@ for Doctor of Nursing Practice Education
 Comprehensive Clinical Training System
 Supporting Advanced Practice Nursing Competencies
 
-[Your Name], DNP Student
-[Institution Name]
-[Date]
+[Perry H Martin], DNP Student
+[University of Alabama at Birmingham]
+[8/4/2025]
 ```
 
 ---
