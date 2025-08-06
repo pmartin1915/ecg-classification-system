@@ -60,7 +60,7 @@ echo This may take 10-15 seconds to fully initialize
 echo.
 
 REM Start Streamlit in background
-start /B %PYTHON_EXE% -m streamlit run complete_user_friendly.py --server.port=8507 --server.headless=true
+start /B cmd /c %PYTHON_EXE% -m streamlit run complete_user_friendly.py --server.port=8507 --server.headless=true
 
 echo Waiting for server to start up...
 timeout /t 8 >nul

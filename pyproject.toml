@@ -1,0 +1,239 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecg-classification-system"
+version = "2.0.0"
+description = "ECG Classification System for Clinical Training and Decision Support"
+authors = [
+    {name = "ECG Classification System Team", email = "contact@ecg-system.dev"},
+]
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Education",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "streamlit==1.31.0",
+    "pandas==2.2.0",
+    "numpy==1.26.3",
+    "scikit-learn==1.4.0",
+    "matplotlib==3.8.2",
+    "wfdb==4.1.2",
+    "scipy==1.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.0.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ecg-classification-system/ecg-classification-system"
+Documentation = "https://github.com/ecg-classification-system/ecg-classification-system/wiki"
+Repository = "https://github.com/ecg-classification-system/ecg-classification-system"
+"Bug Tracker" = "https://github.com/ecg-classification-system/ecg-classification-system/issues"
+
+# ==============================================================================
+# Code Quality and Formatting Configuration
+# ==============================================================================
+
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311", "py312", "py313"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | data
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+known_first_party = ["app", "models", "config", "src"]
+known_third_party = ["streamlit", "pandas", "numpy", "sklearn", "matplotlib", "wfdb", "scipy"]
+skip_glob = [
+    "data/*",
+    "*.ipynb",
+    ".git/*",
+    ".mypy_cache/*",
+    ".pytest_cache/*",
+    "__pycache__/*",
+]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+select = [
+    # Pycodestyle
+    "E",
+    "W",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # pylint
+    "PL",
+]
+ignore = [
+    # Allow non-abstract empty methods in abstract base classes
+    "B027",
+    # Allow boolean positional values in function calls, like `dict.get(... True)`
+    "FBT003",
+    # Ignore checks for possible passwords
+    "S105", "S106", "S107",
+    # Ignore complexity
+    "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+    # Allow print statements for medical/debugging output
+    "T201",
+]
+
+[tool.ruff.per-file-ignores]
+# Tests can use magic values, assertions, and imports
+"test_*.py" = ["PLR2004", "S101", "TID252"]
+"*test*.py" = ["PLR2004", "S101", "TID252"]
+# Scripts can use magic values and print statements
+"*.py" = ["PLR2004"]
+# Allow imports and magic values in __init__.py files
+"__init__.py" = ["F401", "PLR2004"]
+# Config files can have magic values
+"config/*.py" = ["PLR2004"]
+# Deployment and launcher scripts need flexibility
+"deployment_validation.py" = ["PLR2004", "S101", "T201"]
+"complete_user_friendly.py" = ["PLR2004", "T201"]
+"*.bat" = ["ALL"]
+
+[tool.ruff.mccabe]
+max-complexity = 12
+
+[tool.ruff.isort]
+known-first-party = ["app", "models", "config", "src"]
+known-third-party = ["streamlit", "pandas", "numpy", "sklearn", "matplotlib", "wfdb", "scipy"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Gradual typing for medical legacy code
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false  # Allow unused ignores for cross-platform compatibility
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+# Medical data directories to ignore
+exclude = [
+    "^data/",
+    "^venv/",
+    "^build/",
+    "^dist/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "wfdb.*",
+    "neurokit2.*",
+    "plotly.*",
+    "seaborn.*",
+    "sklearn.*",
+    "scipy.*",
+    "matplotlib.*",
+    "streamlit.*",
+    "pyngrok.*",
+]
+ignore_missing_imports = true
+
+# ==============================================================================
+# Medical and Security Configuration
+# ==============================================================================
+
+[tool.ruff.flake8-bandit]
+# Skip security checks that don't apply to medical research context
+skips = ["B101", "B601"]  # Allow assert statements and shell execution for development
+
+[tool.coverage.run]
+source = ["app", "models", "config", "src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "data/*",
+    "venv/*",
+    "build/*",
+    "dist/*",
+    "*.bat",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "medical: marks tests requiring medical validation",
+    "ptbxl: marks tests requiring PTB-XL database",
+]

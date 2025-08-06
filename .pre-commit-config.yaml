@@ -1,0 +1,223 @@
+# Pre-commit configuration for ECG Classification System
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+  # Pre-commit built-in hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: ['--unsafe']  # Allow custom YAML tags
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=10240']  # 10MB max file size
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: debug-statements
+      - id: name-tests-test
+        args: ['--pytest-test-first']
+      - id: requirements-txt-fixer
+      - id: check-ast
+      - id: check-builtin-literals
+
+  # Medical Data Protection Hooks
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+              .*\.ipynb|
+              data/.*|
+              \.git/.*|
+              .*\.bat|
+              LICENSE|
+              .*\.md
+          )$
+
+  # Python code formatting and linting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+        exclude: |
+          (?x)^(
+              data/.*|
+              \.git/.*|
+              venv/.*|
+              build/.*|
+              dist/.*|
+              .*\.ipynb
+          )$
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files"]
+        exclude: |
+          (?x)^(
+              data/.*|
+              \.git/.*|
+              venv/.*|
+              build/.*|
+              dist/.*|
+              .*\.ipynb
+          )$
+
+  # Ruff linter (fast Python linter)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: |
+          (?x)^(
+              data/.*|
+              \.git/.*|
+              venv/.*|
+              build/.*|
+              dist/.*|
+              .*\.ipynb|
+              .*\.bat
+          )$
+
+  # Type checking with mypy (optional, can be disabled for speed)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [
+          types-requests,
+          types-setuptools,
+        ]
+        exclude: |
+          (?x)^(
+              data/.*|
+              \.git/.*|
+              venv/.*|
+              build/.*|
+              dist/.*|
+              test.*\.py|
+              .*\.ipynb
+          )$
+
+  # Security linting with bandit
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: ['-c', '.bandit.yml']
+        exclude: |
+          (?x)^(
+              tests?/.*|
+              test.*\.py|
+              data/.*|
+              \.git/.*|
+              venv/.*|
+              build/.*|
+              dist/.*|
+              .*\.ipynb
+          )$
+
+  # Medical-specific hooks
+  - repo: local
+    hooks:
+      # Check for accidentally committed PHI patterns
+      - id: check-phi-patterns
+        name: Check for PHI patterns
+        entry: python
+        language: system
+        args: ['-c', '
+import re
+import sys
+phi_patterns = [
+    r"\b\d{3}-\d{2}-\d{4}\b",  # SSN patterns
+    r"\bpatient[_\s]id\b",     # Patient ID references
+    r"\bmedical[_\s]record[_\s]number\b",  # MRN patterns
+    r"\b\d{4}[-/]\d{2}[-/]\d{2}\b",  # Date patterns
+    r"\b[A-Z][a-z]+,?\s+[A-Z][a-z]+\b",  # Name patterns (basic)
+]
+for filename in sys.argv[1:]:
+    if any(exclude in filename for exclude in ["data/", ".git/", "venv/", ".ipynb"]):
+        continue
+    try:
+        with open(filename, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+            for pattern in phi_patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    print(f"Potential PHI pattern found in {filename}: {pattern}")
+                    sys.exit(1)
+    except Exception:
+        pass
+        ']
+        files: \.(py|txt|md|yaml|yml)$
+        exclude: |
+          (?x)^(
+              data/.*|
+              \.git/.*|
+              venv/.*|
+              LICENSE|
+              .*\.ipynb|
+              \.pre-commit-config\.yaml
+          )$
+
+      # Check for hardcoded medical data
+      - id: check-medical-data
+        name: Check for hardcoded medical data
+        entry: python
+        language: system
+        args: ['-c', '
+import sys
+medical_keywords = [
+    "ecg_data = [",
+    "signal_data = [", 
+    "patient_data = {",
+    "medical_record = {",
+    "ecg_signal = np.array([",
+]
+for filename in sys.argv[1:]:
+    if any(exclude in filename for exclude in ["data/", ".git/", "venv/", ".ipynb"]):
+        continue
+    try:
+        with open(filename, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+            for keyword in medical_keywords:
+                if keyword in content:
+                    print(f"Hardcoded medical data found in {filename}: {keyword}")
+                    sys.exit(1)
+    except Exception:
+        pass
+        ']
+        files: \.py$
+        exclude: |
+          (?x)^(
+              data/.*|
+              test.*\.py|
+              \.git/.*|
+              venv/.*|
+              src/inference\.py
+          )$
+
+# Configuration for ci (skip slow hooks in CI)
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [mypy]  # Skip mypy in CI for speed
+  submodules: false

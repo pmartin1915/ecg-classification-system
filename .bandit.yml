@@ -1,0 +1,125 @@
+# Bandit configuration for ECG Classification System
+# Security linting configuration for medical AI project
+
+# Specific tests to skip
+skips:
+  # B101: Test for use of assert - Allow for development and testing
+  - B101
+  # B601: Shell injection via Paramiko - Not applicable to our use case
+  - B601
+  # B602: Test for subprocess popen with shell equals true - We need controlled shell access
+  - B602
+
+# Test selection
+tests:
+  - B102  # Test for exec used
+  - B103  # Test for set bad file permissions
+  - B104  # Test for binding to all interfaces
+  - B105  # Test for hardcoded password strings
+  - B106  # Test for hardcoded password funcargs
+  - B107  # Test for hardcoded password default funcargs
+  - B108  # Test for insecure usage of tmp file/directory
+  - B110  # Test for a try except pass
+  - B112  # Test for a continue in the except block
+  - B201  # Test for Flask debug true
+  - B301  # Test for pickle usage
+  - B302  # Test for marshalling/pickling
+  - B303  # Test for MD5 insecure usage
+  - B304  # Test for insecure cipher usage
+  - B305  # Test for cipher modes
+  - B306  # Test for mktemp usage
+  - B307  # Test for eval usage
+  - B308  # Test for mark_safe usage
+  - B309  # Test for HTTPSConnection usage
+  - B310  # Test for urllib urlopen usage
+  - B311  # Test for random usage
+  - B312  # Test for telnet usage
+  - B313  # Test for XML usage
+  - B314  # Test for XML usage
+  - B315  # Test for XML usage
+  - B316  # Test for XML usage
+  - B317  # Test for XML usage
+  - B318  # Test for XML usage
+  - B319  # Test for XML usage
+  - B320  # Test for XML usage
+  - B321  # Test for FTP usage
+  - B322  # Test for input usage
+  - B323  # Test for unverified context usage
+  - B324  # Test for hashlib usage
+  - B325  # Test for tempnam usage
+  - B401  # Test for shell injection
+  - B402  # Test for popen usage
+  - B403  # Test for pickle usage
+  - B404  # Test for subprocess usage
+  - B405  # Test for XML usage
+  - B406  # Test for XML usage
+  - B407  # Test for XML usage
+  - B408  # Test for XML usage
+  - B409  # Test for XML usage
+  - B410  # Test for XML usage
+  - B411  # Test for XML usage
+  - B501  # Test for SSL/TLS usage
+  - B502  # Test for SSL/TLS usage
+  - B503  # Test for SSL/TLS usage
+  - B504  # Test for SSL/TLS usage
+  - B505  # Test for weak cryptographic key usage
+  - B506  # Test for yaml load usage
+  - B507  # Test for SSH usage
+  - B601  # Test for shell injection
+  - B602  # Test for subprocess popen with shell equals true
+  - B603  # Test for subprocess without shell equals true
+  - B604  # Test for any function with shell equals true
+  - B605  # Test for starting a process with a shell
+  - B606  # Test for starting a process without a shell
+  - B607  # Test for starting a process with a partial executable path
+  - B608  # Test for SQL injection
+  - B609  # Test for wildcard injection
+  - B610  # Test for django usage
+  - B701  # Test for jinja2 usage
+  - B702  # Test for use of mako templates
+  - B703  # Test for django usage
+
+# Exclude paths (medical data and generated files)
+exclude_dirs:
+  - 'data/'
+  - 'venv/'
+  - '.git/'
+  - '__pycache__/'
+  - '.pytest_cache/'
+  - '.mypy_cache/'
+  - 'build/'
+  - 'dist/'
+  - '.tox/'
+
+# Medical-specific security configurations
+assert_used:
+  skips: ['**/test_*.py', '**/tests/**']  # Allow asserts in test files
+
+# Low severity issues to ignore in medical context
+confidence: medium
+
+# Medium severity threshold for medical applications
+severity: medium
+
+# Format for reporting
+format: txt
+
+# Include more verbose output for security review
+verbose: true
+
+# Medical data protection patterns
+hardcoded_tmp_directory:
+  word_list:
+    - '/tmp'
+    - '/var/tmp'
+    - '/dev/shm'
+    - 'C:\\temp'
+    - 'C:\\tmp'
+
+# SQL injection patterns for medical databases
+hardcoded_sql_expressions:
+  - 'SELECT * FROM'
+  - 'DROP TABLE'
+  - 'INSERT INTO'
+  - 'UPDATE SET'
+  - 'DELETE FROM'
