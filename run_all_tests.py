@@ -92,10 +92,10 @@ class ECGTestOrchestrator:
         print("="*60)
         
         checks = [
-            ("Main Application Import", 'python -c "import complete_user_friendly; print(\\'SUCCESS\\')"'),
-            ("Models Directory", 'python -c "from pathlib import Path; assert Path(\\'data/models\\').exists()"'),
-            ("Cache Directory", 'python -c "from pathlib import Path; assert Path(\\'data/cache\\').exists()"'),
-            ("PTB-XL Dataset", 'python -c "from pathlib import Path; assert Path(\\'data/raw/ptbxl/ptbxl_database.csv\\').exists()"')
+            ("Main Application Import", 'python -c "import complete_user_friendly; print(\'SUCCESS\')"'),
+            ("Models Directory", 'python -c "from pathlib import Path; assert Path(\'data/models\').exists()"'),
+            ("Cache Directory", 'python -c "from pathlib import Path; assert Path(\'data/cache\').exists()"'),
+            ("PTB-XL Dataset", 'python -c "from pathlib import Path; assert Path(\'data/raw/ptbxl/ptbxl_database.csv\').exists()"')
         ]
         
         verification_passed = 0
